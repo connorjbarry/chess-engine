@@ -8,10 +8,11 @@ This is markdown Todo File for a python chess engine project
 
 ## Content
 
-- [¡] - Add Fen Notation and support for start game position
-  - [] - Add support for any given game position
-  - [] - Get Fen Notation from any position in current game state
+- [] - Get Fen Notation from any position in current game state
 - [] - Add drag support for pieces
+- [] - Add move support for castle
+- [] - Add move support for en passant
+- [] - Add move support for promotion
 
 ## BackLog
 
@@ -22,8 +23,10 @@ This is markdown Todo File for a python chess engine project
 - [] - Push Project to GitHub
 - [] - Host project in service that can host pygame?
 
-# Completed
+## Completed
 
 - [√] - Init Project Repo
+- [√] - Add Fen Notation and support for start game position
+- [√] - Add support for any given game position
 
-# Declined
+## Declined
