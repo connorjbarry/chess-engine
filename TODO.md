@@ -21,12 +21,12 @@ This is markdown Todo File for a python chess engine project
 
 ## Release
 
-- [] - Push Project to GitHub
 - [] - Host project in service that can host pygame?
 
 ## Completed
 
 - [√] - Init Project Repo
+- [√] - Push Project to GitHub
 - [√] - Add Fen Notation and support for start game position
 - [√] - Add support for any given game position
 
