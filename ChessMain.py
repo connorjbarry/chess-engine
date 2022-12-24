@@ -31,7 +31,10 @@ PIECESTOIMAGE = {
 }
 
 """ 
-Initializes a global dictionary of images. This will be called exactly once in the main. Can be edited to allow for different pieces.
+Initializes a global dictionary of images. This will be called exactly once in the main
+
+TODO:
+    ADD DIFFERENT PIECE SETS
 """
 
 
@@ -134,9 +137,6 @@ def drawBoard(screen):
 
 """
     Draws the pieces on the board using the current GameState.board  
-
-    TODO:
-    - Change the gamestate.board to fen notation
 """
 
 

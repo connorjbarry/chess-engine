@@ -13,6 +13,7 @@ class GameState():
         self.moveLog = []
 
     """ 
+    TODO:
     This does not work on castling, en passant, pawn promotion, or checks
     """
 
@@ -111,6 +112,22 @@ class Piece():
 
     def isSlidingPiece(self, piece):
         return piece & 0b100 == 0b100
+
+    def fenNotationDict(self):
+        return {
+            "p": self.Pawn | self.white,
+            "P": self.Pawn | self.black,
+            "r": self.Rook | self.white,
+            "R": self.Rook | self.black,
+            "n": self.Knight | self.white,
+            "N": self.Knight | self.black,
+            "b": self.Bishop | self.white,
+            "B": self.Bishop | self.black,
+            "q": self.Queen | self.white,
+            "Q": self.Queen | self.black,
+            "k": self.King | self.white,
+            "K": self.King | self.black
+        }
 
 
 """ 
