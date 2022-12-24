@@ -14,6 +14,8 @@ This is markdown Todo File for a python chess engine project
 - [] - Add move support for en passant
 - [] - Add move support for promotion
 - [] - Change notation in move class to real chess notation for each move (includes piece moved and any captures)
+- [] - Check for king being attacked and invalidate all moves that do not remove the check
+- [] - End game in checkmate
 
 ## BackLog
 
