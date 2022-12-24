@@ -4,13 +4,17 @@ This class holds all information about the current state of a chess game. It wil
 
 
 class GameState():
-    def __init__(self, board):
+    def __init__(self, fen):
         """ 
             8x8 2d array representing the board, each element is a 2 character string. The first character represents the color, second character represents the type of piece.
         """
-        self.board = board.board
+        self.board = fen.buildStartingBoard()
         self.whiteToMove = True
         self.moveLog = []
+
+    """ 
+    This does not work on castling, en passant, pawn promotion, or checks
+    """
 
     def makeMove(self, move):
         self.board[move.startRow][move.startCol] = 0
@@ -99,16 +103,6 @@ class Piece():
 
 
 """ 
-    Class resonpsible for all the logic of the board, including determining valid moves.
-"""
-
-
-class Board:
-    def __init__(self, fen):
-        self.board = fen.buildStartingBoard()
-
-
-""" 
     This is responsible for handling fen strings and utility
 """
 
@@ -118,7 +112,7 @@ class Fen:
 
     piece = Piece()
 
-    pieceTypeFromChar = {
+    pieceTypeFromSymbol = {
         "p": piece.Pawn,
         "r": piece.Rook,
         "n": piece.Knight,
@@ -161,5 +155,5 @@ class Fen:
 
     def getPiece(self, char, piece=Piece()):
         pieceColor = piece.white if char.isupper() else piece.black
-        pieceType = self.pieceTypeFromChar[char.lower()]
+        pieceType = self.pieceTypeFromSymbol[char.lower()]
         return pieceColor | pieceType

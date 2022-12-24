@@ -55,8 +55,7 @@ def main():
     clock = pg.time.Clock()
     screen.fill(pg.Color("white"))
     fen = Fen()
-    board = Board(fen)
-    gs = GameState(board)
+    gs = GameState(fen)
     loadPieceImages()
     # keeps track of the last click of the user (tuple: (row, col))
     selectedSquare = ()
@@ -74,6 +73,7 @@ def main():
                 # gets row and column of mouse click (0-7) by floor dividing by square size
                 col = location[0] // SQUARE_SIZE
                 row = location[1] // SQUARE_SIZE
+
                 # user clicked the same square twice
                 if selectedSquare == (row, col):
                     selectedSquare = ()  # deselect
@@ -81,9 +81,15 @@ def main():
                 else:
                     selectedSquare = (row, col)
                     playerCLicks.append(selectedSquare)
+
+                # Checks if the user selected an empty square on first click and resets the user clicks
+                if (len(playerCLicks) == 1) and (gs.board[row][col] == 0):
+                    selectedSquare = ()  # deselect
+                    playerCLicks = []
+
                 if len(playerCLicks) == 2:  # after 2nd click
                     move = Move(playerCLicks[0], playerCLicks[1], gs.board)
-                    # print(move.getChessNotation())
+                    print(move.getChessNotation())
                     gs.makeMove(move)
                     selectedSquare = ()  # reset user clicks
                     playerCLicks = []
