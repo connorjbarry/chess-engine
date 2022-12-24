@@ -13,6 +13,7 @@ This is markdown Todo File for a python chess engine project
 - [] - Add move support for castle
 - [] - Add move support for en passant
 - [] - Add move support for promotion
+- [] - Change notation in move class to real chess notation for each move (includes piece moved and any captures)
 
 ## BackLog
 
