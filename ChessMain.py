@@ -27,7 +27,7 @@ PIECESTOIMAGE = {
     piece.white | piece.Queen: "wQ",
     piece.white | piece.King: "wK",
     piece.white | piece.Pawn: "wP",
-    0: None
+    piece.Non: None
 }
 
 """ 
@@ -68,6 +68,7 @@ def main():
         for e in pg.event.get():
             if e.type == pg.QUIT:
                 running = False
+            # mouse handler
             elif e.type == pg.MOUSEBUTTONDOWN:
                 location = pg.mouse.get_pos()  # gets (x,y) location of mouse
                 # gets row and column of mouse click (0-7) by floor dividing by square size
@@ -89,10 +90,16 @@ def main():
 
                 if len(playerCLicks) == 2:  # after 2nd click
                     move = Move(playerCLicks[0], playerCLicks[1], gs.board)
-                    print(move.getChessNotation())
+                    # prints the move in chess notation
+                    # print(move.getChessNotation())
                     gs.makeMove(move)
                     selectedSquare = ()  # reset user clicks
                     playerCLicks = []
+
+            # key handler
+            elif e.type == pg.KEYDOWN:
+                if e.key == pg.K_z:
+                    gs.undoMove()
 
         drawGameState(screen, gs)
         clock.tick(MAX_FPS)

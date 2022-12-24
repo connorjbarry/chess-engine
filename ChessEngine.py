@@ -22,6 +22,17 @@ class GameState():
         self.moveLog.append(move)
         self.whiteToMove = not self.whiteToMove
 
+    """ 
+    Undo the last move made
+    """
+
+    def undoMove(self):
+        if len(self.moveLog) != 0:
+            move = self.moveLog.pop()
+            self.board[move.startRow][move.startCol] = move.pieceMoved
+            self.board[move.endRow][move.endCol] = move.pieceCaptured
+            self.whiteToMove = not self.whiteToMove
+
 
 """ 
 Responsible for storing all information about the current move. It will also be responsible for determining if a move is valid.
@@ -68,7 +79,7 @@ class Move():
 
 
 class Piece():
-    # move Piece.White | Piece.Rook -> 0b10110
+    # move Piece.White | Piece.Rook -> 0b01110 -> 14
     def __init__(self):
         self.Non = 0
         self.King = 1
