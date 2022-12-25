@@ -34,6 +34,63 @@ class GameState():
             self.board[move.endRow][move.endCol] = move.pieceCaptured
             self.whiteToMove = not self.whiteToMove
 
+    """ 
+    Responsible for all the logic that determines if a move is valid, including checks
+    """
+
+    def getValidMoves(self):
+        return self.getPossibleMoves()
+
+    """ 
+    Responsible for all valid moves of a given piece 
+    """
+
+    def getPossibleMoves(self):
+        moves = []
+        piece = Piece()
+        for r in range(len(self.board)):
+            for c in range(len(self.board[r])):
+                turn = self.checkTurn(self.board[r][c], piece)
+                # print(
+                #     f'piece: {self.board[r][c]} == {turn | piece.Pawn} type of piece = {type(turn | piece.Pawn)} turn = {turn}')
+                if (turn == piece.white and self.whiteToMove) or (turn == piece.black and not self.whiteToMove):
+                    chessPiece = self.board[r][c]
+                    if chessPiece == (turn | piece.Pawn):
+                        moves.extend(self.getPawnMoves(r, c))
+        return moves
+
+    def getPawnMoves(self, r, c):
+        pawnMoves = []
+        if self.whiteToMove:
+            if self.board[r-1][c] == 0:
+                pawnMoves.append(Move((r, c), (r-1, c), self.board))
+                if r == 6 and self.board[r-2][c] == 0:
+                    pawnMoves.append(Move((r, c), (r-2, c), self.board))
+            # capture left
+            if c - 1 >= 0:
+                if self.board[r-1][c-1] > 16:  # checks for black piece
+                    pawnMoves.append(Move((r, c), (r-1, c-1), self.board))
+            # capture right
+            if c + 1 <= 7:
+                if self.board[r-1][c+1] > 16:  # checks for black piece
+                    pawnMoves.append(Move((r, c), (r-1, c+1), self.board))
+
+        else:
+            if self.board[r+1][c] == 0:
+                pawnMoves.append(Move((r, c), (r+1, c), self.board))
+                if r == 1 and self.board[r+2][c] == 0:
+                    pawnMoves.append(Move((r, c), (r+2, c), self.board))
+
+        return pawnMoves
+
+    def checkTurn(self, chessPiece, piece):
+        if chessPiece == 0:
+            return 0
+        if chessPiece < 16:
+            return piece.white
+        else:
+            return piece.black
+
 
 """ 
 Responsible for storing all information about the current move. It will also be responsible for determining if a move is valid.
@@ -149,7 +206,7 @@ class Fen:
         "k": piece.King
     }
 
-    # Init function not needed?
+    # ? Init function not needed
     def __init__(self):
         self.squares = [None] * 64
 
