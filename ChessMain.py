@@ -59,6 +59,8 @@ def main():
     screen.fill(pg.Color("white"))
     fen = Fen()
     gs = GameState(fen)
+    validMoves = gs.getValidMoves()
+    moveMade = False  # Flag variable for when a move is made
     loadPieceImages()
     # keeps track of the last click of the user (tuple: (row, col))
     selectedSquare = ()
@@ -94,8 +96,10 @@ def main():
                 if len(playerCLicks) == 2:  # after 2nd click
                     move = Move(playerCLicks[0], playerCLicks[1], gs.board)
                     # prints the move in chess notation
-                    # print(move.getChessNotation())
-                    gs.makeMove(move)
+                    print(move.getChessNotation())
+                    if move in validMoves:
+                        gs.makeMove(move)
+                        moveMade = True
                     selectedSquare = ()  # reset user clicks
                     playerCLicks = []
 
@@ -103,6 +107,11 @@ def main():
             elif e.type == pg.KEYDOWN:
                 if e.key == pg.K_z:
                     gs.undoMove()
+                    moveMade = True
+
+        if moveMade:
+            validMoves = gs.getValidMoves()
+            moveMade = False
 
         drawGameState(screen, gs)
         clock.tick(MAX_FPS)
