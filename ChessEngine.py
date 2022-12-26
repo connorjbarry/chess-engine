@@ -235,7 +235,7 @@ class GameState():
     def checkTurn(self, chessPiece, piece):
         if chessPiece == 0:
             return None
-        return chessPiece & piece.getPieceColor(chessPiece)
+        return piece.getPieceColor(chessPiece)
 
 
 """ 

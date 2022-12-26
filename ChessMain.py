@@ -96,11 +96,11 @@ def main():
                 # check if user is selecting another piece of same color
                 if (len(playerCLicks) > 1):
                     # gets the color of the first piece selected
-                    firstPieceColor = gs.board[playerCLicks[0][0]][playerCLicks[0][1]] & piece.getPieceColor(
+                    firstPieceColor = piece.getPieceColor(
                         gs.board[playerCLicks[0][0]][playerCLicks[0][1]])
 
                     # gets the color of the second piece selected
-                    secondPieceColor = gs.board[playerCLicks[1][0]][playerCLicks[1][1]] & piece.getPieceColor(
+                    secondPieceColor = piece.getPieceColor(
                         gs.board[playerCLicks[1][0]][playerCLicks[1][1]])
                     # if the user selects a piece of the same color, it will deselect the first piece and select the new piece
                     if firstPieceColor == secondPieceColor:
