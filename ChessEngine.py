@@ -151,13 +151,14 @@ class GameState():
                 endCol = c + direction[1] * moveLength
                 # checks if move is on board
                 if (endRow < 0 or endRow >= 8) or (endCol < 0 or endCol >= 8):
-                    break
+                    continue
 
                 endPositionColor = self.checkTurn(
                     self.board[endRow][endCol], piece)
-                if endPositionColor != allyColor:
-                    rookMoves.append(
-                        Move((r, c), (endRow, endCol), self.board))
+                if endPositionColor == allyColor:
+                    continue
+                rookMoves.append(
+                    Move((r, c), (endRow, endCol), self.board))
 
         return rookMoves
 
@@ -182,10 +183,10 @@ class GameState():
 
                 endPositionColor = self.checkTurn(
                     self.board[endRow][endCol], piece)
-                if endPositionColor != allyColor:
-                    bishopMoves.append(
-                        Move((r, c), (endRow, endCol), self.board))
-
+                if endPositionColor == allyColor:
+                    continue
+                bishopMoves.append(
+                    Move((r, c), (endRow, endCol), self.board))
         return bishopMoves
 
     """ 
@@ -223,8 +224,9 @@ class GameState():
 
             endPositionColor = self.checkTurn(
                 self.board[endRow][endCol], piece)
-            if endPositionColor != allyColor:
-                kingMoves.append(Move((r, c), (endRow, endCol), self.board))
+            if endPositionColor == allyColor:
+                break
+            kingMoves.append(Move((r, c), (endRow, endCol), self.board))
 
         return kingMoves
 

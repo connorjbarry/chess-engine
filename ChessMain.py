@@ -127,7 +127,7 @@ def main():
             validMoves = gs.getValidMoves()
             moveMade = False
 
-        drawGameState(screen, gs)
+        drawGameState(screen, gs, validMoves, selectedSquare)
         clock.tick(MAX_FPS)
         pg.display.flip()
 
@@ -137,9 +137,11 @@ def main():
 """
 
 
-def drawGameState(screen, gs):
+def drawGameState(screen, gs, validMoves, selectedSquare):
     # Draws squares on board
     drawBoard(screen)
+    # Highlights selected square and highlights moves from that square
+    highlightSquares(screen, gs, validMoves, selectedSquare)
     # Draws pieces on top of squares from gamestate
     drawPieces(screen, gs.board)
 
@@ -171,6 +173,24 @@ def drawPieces(screen, board):
             if imageFromPiece != None:
                 screen.blit(IMAGES[imageFromPiece], pg.Rect(
                     c * SQUARE_SIZE, r * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE))
+
+
+def highlightSquares(screen, gs, validMoves, selectedSquare):
+    if selectedSquare != ():
+        r, c = selectedSquare
+        if piece.getPieceColor(gs.board[r][c]) == (piece.white if gs.whiteToMove else piece.black):
+            # highlight selected square
+            s = pg.Surface((SQUARE_SIZE, SQUARE_SIZE))
+            s.set_alpha(100)
+            s.fill(pg.Color('blue'))
+            screen.blit(s, (c * SQUARE_SIZE, r * SQUARE_SIZE))
+            # highlight moves from that square
+            s.set_alpha(75)
+            s.fill(pg.Color('red'))
+            for move in validMoves:
+                if move.startRow == r and move.startCol == c:
+                    screen.blit(s, (move.endCol * SQUARE_SIZE,
+                                    move.endRow * SQUARE_SIZE))
 
 
 if __name__ == "__main__":
