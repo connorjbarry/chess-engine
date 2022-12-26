@@ -93,12 +93,26 @@ def main():
                     selectedSquare = ()  # deselect
                     playerCLicks = []
 
+                # check if user is selecting another piece of same color
+                if (len(playerCLicks) > 1):
+                    # gets the color of the first piece selected
+                    firstPieceColor = gs.board[playerCLicks[0][0]][playerCLicks[0][1]] & piece.getPieceColor(
+                        gs.board[playerCLicks[0][0]][playerCLicks[0][1]])
+
+                    # gets the color of the second piece selected
+                    secondPieceColor = gs.board[playerCLicks[1][0]][playerCLicks[1][1]] & piece.getPieceColor(
+                        gs.board[playerCLicks[1][0]][playerCLicks[1][1]])
+                    # if the user selects a piece of the same color, it will deselect the first piece and select the new piece
+                    if firstPieceColor == secondPieceColor:
+                        selectedSquare = playerCLicks[1]
+                        playerCLicks = [selectedSquare]
+
                 if len(playerCLicks) == 2:  # after 2nd click
                     move = Move(playerCLicks[0], playerCLicks[1], gs.board)
                     # prints the move in chess notation
-                    print(move.getChessNotation())
                     if move in validMoves:
                         gs.makeMove(move)
+                        print(move.getChessNotation())
                         moveMade = True
                     selectedSquare = ()  # reset user clicks
                     playerCLicks = []
