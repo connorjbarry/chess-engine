@@ -58,6 +58,8 @@ class GameState():
                     # TODO: can try to simplify this if statement
                     if chessPiece == (turn | piece.Pawn):
                         moves.extend(self.getPawnMoves(r, c))
+                    elif chessPiece == (turn | piece.Knight):
+                        moves.extend(self.getKnightMoves(r, c, piece=Piece()))
                     elif chessPiece == (turn | piece.Rook):
                         moves.extend(self.getRookMoves(r, c, piece=Piece()))
                     elif chessPiece == (turn | piece.Bishop):
@@ -105,6 +107,32 @@ class GameState():
                     pawnMoves.append(Move((r, c), (r+1, c+1), self.board))
 
         return pawnMoves
+
+    """ 
+    Gets all knight moves for the knight located at row, col and returns a list of moves
+
+    TODO:
+    - Checks
+    """
+
+    def getKnightMoves(self, r, c, piece):
+        knightMoves = []
+        directions = [(1, 2), (2, 1), (-1, 2), (-2, 1),
+                      (1, -2), (2, -1), (-1, -2), (-2, -1)]
+        allyColor = piece.white if self.whiteToMove else piece.black
+        for direction in directions:
+            endRow = r + direction[0]
+            endCol = c + direction[1]
+            # checks if move is on board
+            if (endRow < 0 or endRow >= 8) or (endCol < 0 or endCol >= 8):
+                continue
+
+            endPositionColor = self.checkTurn(
+                self.board[endRow][endCol], piece)
+            if endPositionColor != allyColor:
+                knightMoves.append(Move((r, c), (endRow, endCol), self.board))
+
+        return knightMoves
 
     """ 
     Gets all rook moves for the rook located at row, col and returns a list of moves
