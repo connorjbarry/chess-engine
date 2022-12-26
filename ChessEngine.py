@@ -234,11 +234,8 @@ class GameState():
 
     def checkTurn(self, chessPiece, piece):
         if chessPiece == 0:
-            return 0
-        if chessPiece < 16:
-            return piece.white
-        else:
-            return piece.black
+            return None
+        return chessPiece & piece.getPieceColor(chessPiece)
 
 
 """ 
