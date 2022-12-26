@@ -58,6 +58,14 @@ class GameState():
                     # TODO: can try to simplify this if statement
                     if chessPiece == (turn | piece.Pawn):
                         moves.extend(self.getPawnMoves(r, c))
+                    elif chessPiece == (turn | piece.Knight):
+                        moves.extend(self.getKnightMoves(r, c, piece=Piece()))
+                    elif chessPiece == (turn | piece.Rook):
+                        moves.extend(self.getRookMoves(r, c, piece=Piece()))
+                    elif chessPiece == (turn | piece.Bishop):
+                        moves.extend(self.getBishopMoves(r, c, piece=Piece()))
+                    elif chessPiece == (turn | piece.Queen):
+                        moves.extend(self.getQueenMoves(r, c, piece=Piece()))
                     elif chessPiece == (turn | piece.King):
                         moves.extend(self.getKingMoves(r, c, piece=Piece()))
         return moves
@@ -67,7 +75,6 @@ class GameState():
     
     TODO: 
     - En passant, Pawn promotion, Checks
-
     """
 
     def getPawnMoves(self, r, c):
@@ -101,6 +108,99 @@ class GameState():
 
         return pawnMoves
 
+    """ 
+    Gets all knight moves for the knight located at row, col and returns a list of moves
+
+    TODO:
+    - Checks
+    """
+
+    def getKnightMoves(self, r, c, piece):
+        knightMoves = []
+        directions = [(1, 2), (2, 1), (-1, 2), (-2, 1),
+                      (1, -2), (2, -1), (-1, -2), (-2, -1)]
+        allyColor = piece.white if self.whiteToMove else piece.black
+        for direction in directions:
+            endRow = r + direction[0]
+            endCol = c + direction[1]
+            # checks if move is on board
+            if (endRow < 0 or endRow >= 8) or (endCol < 0 or endCol >= 8):
+                continue
+
+            endPositionColor = self.checkTurn(
+                self.board[endRow][endCol], piece)
+            if endPositionColor != allyColor:
+                knightMoves.append(Move((r, c), (endRow, endCol), self.board))
+
+        return knightMoves
+
+    """ 
+    Gets all rook moves for the rook located at row, col and returns a list of moves
+
+    TODO:
+    - Castling, Checks
+    """
+
+    def getRookMoves(self, r, c, piece):
+        rookMoves = []
+        directions = [(1, 0), (0, 1), (-1, 0), (0, -1)]
+        allyColor = piece.white if self.whiteToMove else piece.black
+        for direction in directions:
+            for moveLength in range(8):
+                endRow = r + direction[0] * moveLength
+                endCol = c + direction[1] * moveLength
+                # checks if move is on board
+                if (endRow < 0 or endRow >= 8) or (endCol < 0 or endCol >= 8):
+                    break
+
+                endPositionColor = self.checkTurn(
+                    self.board[endRow][endCol], piece)
+                if endPositionColor != allyColor:
+                    rookMoves.append(
+                        Move((r, c), (endRow, endCol), self.board))
+
+        return rookMoves
+
+    """ 
+    Gets all bishop moves for the bishop located at row, col and returns a list of moves
+
+    TODO:
+    - Checks
+    """
+
+    def getBishopMoves(self, r, c, piece):
+        bishopMoves = []
+        directions = [(1, 1), (-1, 1), (-1, -1), (1, -1)]
+        allyColor = piece.white if self.whiteToMove else piece.black
+        for direction in directions:
+            for moveLength in range(8):
+                endRow = r + direction[0] * moveLength
+                endCol = c + direction[1] * moveLength
+                # checks if move is on board
+                if (endRow < 0 or endRow >= 8) or (endCol < 0 or endCol >= 8):
+                    break
+
+                endPositionColor = self.checkTurn(
+                    self.board[endRow][endCol], piece)
+                if endPositionColor != allyColor:
+                    bishopMoves.append(
+                        Move((r, c), (endRow, endCol), self.board))
+
+        return bishopMoves
+
+    """ 
+    Gets all queen moves for the queen located at row, col and returns a list of moves
+
+    TODO:
+    - Checks
+    """
+
+    def getQueenMoves(self, r, c, piece):
+        queenMoves = []
+        queenMoves.extend(self.getRookMoves(r, c, piece))
+        queenMoves.extend(self.getBishopMoves(r, c, piece))
+        return queenMoves
+
     """
     Gets all king moves for the king located at row, col and returns a list of moves
 
@@ -121,12 +221,16 @@ class GameState():
             if (endRow < 0 or endRow >= 8) or (endCol < 0 or endCol >= 8):
                 continue
 
-            print(endRow, endCol)
             endPositionColor = self.checkTurn(
                 self.board[endRow][endCol], piece)
             if endPositionColor != allyColor:
                 kingMoves.append(Move((r, c), (endRow, endCol), self.board))
+
         return kingMoves
+
+    """
+        Gets the color of the piece passed into the function
+    """
 
     def checkTurn(self, chessPiece, piece):
         if chessPiece == 0:
