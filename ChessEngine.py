@@ -55,9 +55,20 @@ class GameState():
                 #     f'piece: {self.board[r][c]} == {turn | piece.Pawn} type of piece = {type(turn | piece.Pawn)} turn = {turn}')
                 if (turn == piece.white and self.whiteToMove) or (turn == piece.black and not self.whiteToMove):
                     chessPiece = self.board[r][c]
+                    # TODO: can try to simplify this if statement
                     if chessPiece == (turn | piece.Pawn):
                         moves.extend(self.getPawnMoves(r, c))
+                    elif chessPiece == (turn | piece.King):
+                        moves.extend(self.getKingMoves(r, c, piece=Piece()))
         return moves
+
+    """ 
+    Gets all pawn moves for the pawn located at row, col and returns a list of moves
+    
+    TODO: 
+    - En passant, Pawn promotion, Checks
+
+    """
 
     def getPawnMoves(self, r, c):
         pawnMoves = []
@@ -74,7 +85,6 @@ class GameState():
             if c + 1 <= 7:
                 if self.board[r-1][c+1] > 16:  # checks for black piece
                     pawnMoves.append(Move((r, c), (r-1, c+1), self.board))
-
         else:
             if self.board[r+1][c] == 0:
                 pawnMoves.append(Move((r, c), (r+1, c), self.board))
@@ -90,6 +100,33 @@ class GameState():
                     pawnMoves.append(Move((r, c), (r+1, c+1), self.board))
 
         return pawnMoves
+
+    """
+    Gets all king moves for the king located at row, col and returns a list of moves
+
+    TODO:
+    - Castling, Checks
+    """
+
+    def getKingMoves(self, r, c, piece):
+        kingMoves = []
+        possibleKingMoves = [(1, 0), (1, 1), (0, 1), (-1, 1),
+                             (-1, 0), (-1, -1), (0, -1), (1, -1)]
+        allyColor = piece.white if self.whiteToMove else piece.black
+
+        for move in possibleKingMoves:
+            endRow = r + move[0]
+            endCol = c + move[1]
+            # check if move not on board
+            if (endRow < 0 or endRow >= 8) or (endCol < 0 or endCol >= 8):
+                continue
+
+            print(endRow, endCol)
+            endPositionColor = self.checkTurn(
+                self.board[endRow][endCol], piece)
+            if endPositionColor != allyColor:
+                kingMoves.append(Move((r, c), (endRow, endCol), self.board))
+        return kingMoves
 
     def checkTurn(self, chessPiece, piece):
         if chessPiece == 0:
