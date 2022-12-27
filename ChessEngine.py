@@ -56,17 +56,17 @@ class GameState():
                 if (turn == piece.white and self.whiteToMove) or (turn == piece.black and not self.whiteToMove):
                     chessPiece = self.board[r][c]
                     # TODO: can try to simplify this if statement
-                    if chessPiece == (turn | piece.Pawn):
+                    if piece.getPieceType(chessPiece) == piece.Pawn:
                         moves.extend(self.getPawnMoves(r, c))
-                    elif chessPiece == (turn | piece.Knight):
+                    elif piece.getPieceType(chessPiece) == piece.Knight:
                         moves.extend(self.getKnightMoves(r, c, piece=Piece()))
-                    elif chessPiece == (turn | piece.Rook):
+                    elif piece.getPieceType(chessPiece) == piece.Rook:
                         moves.extend(self.getRookMoves(r, c, piece=Piece()))
-                    elif chessPiece == (turn | piece.Bishop):
+                    elif piece.getPieceType(chessPiece) == piece.Bishop:
                         moves.extend(self.getBishopMoves(r, c, piece=Piece()))
-                    elif chessPiece == (turn | piece.Queen):
+                    elif piece.getPieceType(chessPiece) == piece.Queen:
                         moves.extend(self.getQueenMoves(r, c, piece=Piece()))
-                    elif chessPiece == (turn | piece.King):
+                    elif piece.getPieceType(chessPiece) == piece.King:
                         moves.extend(self.getKingMoves(r, c, piece=Piece()))
         return moves
 
