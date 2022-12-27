@@ -144,21 +144,26 @@ class GameState():
     def getRookMoves(self, r, c, piece):
         rookMoves = []
         directions = [(1, 0), (0, 1), (-1, 0), (0, -1)]
-        allyColor = piece.white if self.whiteToMove else piece.black
+        enemyColor = piece.black if self.whiteToMove else piece.white
         for direction in directions:
-            for moveLength in range(8):
+            for moveLength in range(1, 8):
                 endRow = r + direction[0] * moveLength
                 endCol = c + direction[1] * moveLength
                 # checks if move is on board
-                if (endRow < 0 or endRow >= 8) or (endCol < 0 or endCol >= 8):
-                    continue
-
-                endPositionColor = self.checkTurn(
-                    self.board[endRow][endCol], piece)
-                if endPositionColor == allyColor:
-                    continue
-                rookMoves.append(
-                    Move((r, c), (endRow, endCol), self.board))
+                if 0 <= endRow < 8 and 0 <= endCol < 8:
+                    endPiece = self.board[endRow][endCol]
+                    endPieceColor = self.checkTurn(endPiece, piece)
+                    if endPiece == 0:
+                        rookMoves.append(
+                            Move((r, c), (endRow, endCol), self.board))
+                    elif endPieceColor == enemyColor:
+                        rookMoves.append(
+                            Move((r, c), (endRow, endCol), self.board))
+                        break
+                    else:
+                        break
+                else:
+                    break
 
         return rookMoves
 
@@ -172,21 +177,27 @@ class GameState():
     def getBishopMoves(self, r, c, piece):
         bishopMoves = []
         directions = [(1, 1), (-1, 1), (-1, -1), (1, -1)]
-        allyColor = piece.white if self.whiteToMove else piece.black
+        enemyColor = piece.black if self.whiteToMove else piece.white
         for direction in directions:
-            for moveLength in range(8):
+            for moveLength in range(1, 8):
                 endRow = r + direction[0] * moveLength
                 endCol = c + direction[1] * moveLength
                 # checks if move is on board
-                if (endRow < 0 or endRow >= 8) or (endCol < 0 or endCol >= 8):
+                if 0 <= endRow < 8 and 0 <= endCol < 8:
+                    endPiece = self.board[endRow][endCol]
+                    endPieceColor = self.checkTurn(endPiece, piece)
+                    if endPiece == 0:
+                        bishopMoves.append(
+                            Move((r, c), (endRow, endCol), self.board))
+                    elif endPieceColor == enemyColor:
+                        bishopMoves.append(
+                            Move((r, c), (endRow, endCol), self.board))
+                        break
+                    else:
+                        break
+                else:
                     break
 
-                endPositionColor = self.checkTurn(
-                    self.board[endRow][endCol], piece)
-                if endPositionColor == allyColor:
-                    continue
-                bishopMoves.append(
-                    Move((r, c), (endRow, endCol), self.board))
         return bishopMoves
 
     """ 
