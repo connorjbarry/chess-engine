@@ -59,7 +59,7 @@ def main():
     screen.fill(pg.Color("white"))
     fen = Fen()
     gs = GameState(fen)
-    validMoves = gs.getValidMoves()
+    validMoves = gs.getLegalMoves()
     moveMade = False  # Flag variable for when a move is made
     loadPieceImages()
     # keeps track of the last click of the user (tuple: (row, col))
@@ -124,7 +124,7 @@ def main():
                     moveMade = True
 
         if moveMade:
-            validMoves = gs.getValidMoves()
+            validMoves = gs.getLegalMoves()
             moveMade = False
 
         drawGameState(screen, gs, validMoves, selectedSquare)

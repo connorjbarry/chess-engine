@@ -11,6 +11,13 @@ class GameState():
         self.board = fen.buildStartingBoard()
         self.whiteToMove = True
         self.moveLog = []
+        self.whiteKingLocation = (7, 4)
+        self.blackKingLocation = (0, 4)
+        self.inCheck = False
+        self.pins = []
+        self.checks = []
+        self.checkMate = False
+        self.staleMate = False
 
     """ 
     TODO:
@@ -22,6 +29,13 @@ class GameState():
         self.board[move.endRow][move.endCol] = move.pieceMoved
         self.moveLog.append(move)
         self.whiteToMove = not self.whiteToMove
+        # update king's location if moved
+        piece = Piece()
+        if piece.getPieceType(move.pieceMoved) == piece.King:
+            if self.whiteToMove:
+                self.whiteKingLocation = (move.endRow, move.endCol)
+            else:
+                self.blackKingLocation = (move.endRow, move.endCol)
 
     """ 
     Undo the last move made
@@ -33,42 +47,189 @@ class GameState():
             self.board[move.startRow][move.startCol] = move.pieceMoved
             self.board[move.endRow][move.endCol] = move.pieceCaptured
             self.whiteToMove = not self.whiteToMove
+            # update king's location if moved
+            piece = Piece()
+            if piece.getPieceType(move.pieceMoved) == piece.King:
+                if self.whiteToMove:
+                    self.whiteKingLocation = (move.startRow, move.startCol)
+                else:
+                    self.blackKingLocation = (move.startRow, move.startCol)
 
     """ 
     Responsible for all the logic that determines if a move is valid, including checks
     """
 
-    def getValidMoves(self):
-        return self.getPossibleMoves()
+    def getLegalMoves(self):
+        piece = Piece()
+        moves = []
+        self.inCheck, self.pins, self.checks = self.getAllPinsAndChecks(piece)
+        if self.whiteToMove:
+            kingRow = self.whiteKingLocation[0]
+            kingCol = self.whiteKingLocation[1]
+        else:
+            kingRow = self.blackKingLocation[0]
+            kingCol = self.blackKingLocation[1]
+
+        if self.inCheck:
+            # There is only one check so we can block, take or move king
+            if len(self.checks) == 1:
+                check = self.checks[0]
+                checkRow = check[0]
+                checkCol = check[1]
+                pieceChecking = self.board[checkRow][checkCol]
+                validSquares = []
+                # if knight, must capture knight or move king
+                if piece.getPieceType(pieceChecking) == piece.Knight:
+                    validSquares = [(checkRow, checkCol)]
+                else:
+                    for i in range(1, 8):
+                        availableSquare = (
+                            kingRow + check[2][0] * i, kingCol + check[2][1] * i)
+                        validSquares.append(availableSquare)
+
+                        # stop checking for available squares when you reach the checking piece
+                        if availableSquare[0] == checkRow and availableSquare[1] == checkCol:
+                            break
+
+                    # get rid of any moves that are dont block check, take checking piece or move king
+                    for i in range(len(validSquares) - 1, -1, -1):
+                        # king moves are already generated so those stay
+                        if piece.getPieceType(moves[i].pieceMoved) != piece.King:
+                            # check if move is inside of valid moves, if not remove from list
+                            if (moves[i].endRow, moves[i].endCol) not in validSquares:
+                                moves.remove(moves[i])
+
+                        # There is a double check or more, so king must move
+            else:
+                moves = self.getKingMoves(kingRow, kingCol, piece=Piece())
+
+        # the king is not in check
+        else:
+            moves = self.getPsuedoLegalMoves()
+
+        if len(moves) == 0:
+            # checkmate
+            if self.inCheck:
+                self.checkMate = True
+            # stalemate
+            else:
+                self.staleMate = True
+        # in the case that we undo a move and checkmate is true, we need to set it to false
+        else:
+            self.checkMate = False
+            self.staleMate = False
+
+        return moves
 
     """ 
     Responsible for all valid moves of a given piece 
     """
 
-    def getPossibleMoves(self):
+    def getPsuedoLegalMoves(self):
         moves = []
         piece = Piece()
         for r in range(len(self.board)):
             for c in range(len(self.board[r])):
                 turn = self.checkTurn(self.board[r][c], piece)
-                # print(
-                #     f'piece: {self.board[r][c]} == {turn | piece.Pawn} type of piece = {type(turn | piece.Pawn)} turn = {turn}')
+
                 if (turn == piece.white and self.whiteToMove) or (turn == piece.black and not self.whiteToMove):
                     chessPiece = self.board[r][c]
                     # TODO: can try to simplify this if statement
                     if piece.getPieceType(chessPiece) == piece.Pawn:
                         moves.extend(self.getPawnMoves(r, c))
+
                     elif piece.getPieceType(chessPiece) == piece.Knight:
                         moves.extend(self.getKnightMoves(r, c, piece=Piece()))
+
                     elif piece.getPieceType(chessPiece) == piece.Rook:
                         moves.extend(self.getRookMoves(r, c, piece=Piece()))
+
                     elif piece.getPieceType(chessPiece) == piece.Bishop:
                         moves.extend(self.getBishopMoves(r, c, piece=Piece()))
+
                     elif piece.getPieceType(chessPiece) == piece.Queen:
                         moves.extend(self.getQueenMoves(r, c, piece=Piece()))
+
                     elif piece.getPieceType(chessPiece) == piece.King:
                         moves.extend(self.getKingMoves(r, c, piece=Piece()))
+
         return moves
+
+    """ 
+    Checks moves for a check on the king or if a piece is pinned and cannot move
+    """
+
+    def getAllPinsAndChecks(self, piece):
+        pins = []
+        checks = []
+        inCheck = False
+        if self.whiteToMove:
+            enemyColor = piece.black
+            allyColor = piece.white
+            startRow = self.whiteKingLocation[0]
+            startCol = self.whiteKingLocation[1]
+        else:
+            enemyColor = piece.white
+            allyColor = piece.black
+            startRow = self.blackKingLocation[0]
+            startCol = self.blackKingLocation[1]
+
+        directions = ((-1, 0), (0, -1), (1, 0), (0, 1),
+                      (-1, -1), (-1, 1), (1, -1), (1, 1))
+
+        # check for pins and checks
+        for j in range(len(directions)):
+            direction = directions[j]
+            possiblePin = ()
+            for i in range(1, 8):
+                endRow = startRow + direction[0] * i
+                endCol = startCol + direction[1] * i
+                # ensures endRow and endCol are on the board
+                if 0 <= endRow < 8 and 0 <= endCol < 8:
+                    endPiece = self.board[endRow][endCol]
+                    # Checks if the piece in the direction is ally for possible pin
+                    if piece.getPieceColor(endPiece) == allyColor:
+                        if possiblePin == ():
+                            possiblePin = (endRow, endCol, direction)
+                        # already an ally piece in direction, no possible pin or check
+                        else:
+                            break
+                    elif piece.getPieceColor(endPiece) == enemyColor:
+                        # gets the type of piece in direction to check if it can move in given direction
+                        pieceType = piece.getPieceType(endPiece)
+
+                        # checks for piece and the direction that a given piece can move for capture
+                        #!Does not account for knights
+                        if (pieceType == piece.Rook and 0 <= j <= 3) or (pieceType == piece.Bishop and 4 <= j <= 7) or Piece.Queen or (pieceType == piece.King and i == 1) or (pieceType == piece.Pawn and i == 1 and ((enemyColor == piece.white and 6 <= j <= 7) or (enemyColor == piece.black and 4 <= j <= 5))):
+                            # if pin is empty, then it is a check
+                            if possiblePin == ():
+                                inCheck = True
+                                checks.append((endRow, endCol, direction))
+                                break
+                            # otherwise a piece is in the way, which is now pinned
+                            else:
+                                pins.append(possiblePin)
+                                break
+                    else:
+                        break
+                else:
+                    break
+
+        # checks for knight checks, since the knight is not a sliding piece
+        knightMoves = ((-2, -1), (-2, 1), (-1, -2), (-1, 2),
+                       (1, -2), (1, 2), (2, -1), (2, 1))
+        for move in knightMoves:
+            endRow = startRow + move[0]
+            endCol = startCol + move[1]
+            # check if move is on board
+            if 0 <= endRow < 8 and 0 <= endCol < 8:
+                endPiece = self.board[endRow][endCol]
+                # checks if piece is enemy knight
+                if piece.getPieceColor(endPiece) == enemyColor and piece.getPieceType(endPiece) == piece.Knight:
+                    inCheck = True
+                    checks.append((endRow, endCol, move))
+
+        return inCheck, pins, checks
 
     """ 
     Gets all pawn moves for the pawn located at row, col and returns a list of moves
