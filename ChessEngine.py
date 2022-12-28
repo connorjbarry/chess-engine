@@ -439,7 +439,7 @@ class GameState():
                 self.whiteKingLocation = (endRow, endCol)
             else:
                 self.blackKingLocation = (endRow, endCol)
-            inCheck, pins, checks = self.checkForPinsAndChecks()
+            inCheck = self.getAllPinsAndChecks(piece)
             if not inCheck:
                 kingMoves.append(
                     Move((r, c), (endRow, endCol), self.board))
