@@ -74,6 +74,7 @@ class GameState():
             # There is only one check so we can block, take or move king
             if len(self.checks) == 1:
                 print("here in checks > 1")
+                moves = self.getPsuedoLegalMoves()
                 check = self.checks[0]
                 checkRow = check[0]
                 checkCol = check[1]
@@ -94,11 +95,12 @@ class GameState():
                             break
 
                     # get rid of any moves that are dont block check, take checking piece or move king
-                    for i in range(len(validSquares) - 1, -1, -1):
+                    for i in range(len(moves) - 1, -1, -1):
                         # king moves are already generated so those stay
                         if piece.getPieceType(moves[i].pieceMoved) != piece.King:
                             # check if move is inside of valid moves, if not remove from list
-                            if (moves[i].endRow, moves[i].endCol) not in validSquares:
+                            if not (moves[i].endRow, moves[i].endCol) in validSquares:
+                                print("here")
                                 moves.remove(moves[i])
 
                         # There is a double check or more, so king must move
@@ -189,24 +191,20 @@ class GameState():
                 # ensures endRow and endCol are on the board
                 if 0 <= endRow < 8 and 0 <= endCol < 8:
                     endPiece = self.board[endRow][endCol]
-                    print("here")
                     # Checks if the piece in the direction is ally for possible pin
                     if piece.getPieceColor(endPiece) == allyColor:
-                        print("Ally Piece")
                         if possiblePin == ():
                             possiblePin = (endRow, endCol, direction)
                         # already an ally piece in direction, no possible pin or check
                         else:
                             break
                     elif piece.getPieceColor(endPiece) == enemyColor:
-                        print("Enemy Piece")
                         # gets the type of piece in direction to check if it can move in given direction
                         pieceType = piece.getPieceType(endPiece)
 
                         # checks for piece and the direction that a given piece can move for capture
                         #!Does not account for knights
-                        if (pieceType == piece.Rook and 0 <= j <= 3) or (pieceType == piece.Bishop and 4 <= j <= 7) or Piece.Queen or (pieceType == piece.King and i == 1) or (pieceType == piece.Pawn and i == 1 and ((enemyColor == piece.white and 6 <= j <= 7) or (enemyColor == piece.black and 4 <= j <= 5))):
-                            print("Possible Check")
+                        if (pieceType == piece.Rook and 0 <= j <= 3) or (pieceType == piece.Bishop and 4 <= j <= 7) or piece.Queen or (pieceType == piece.King and i == 1) or (pieceType == piece.Pawn and i == 1 and ((enemyColor == piece.white and 6 <= j <= 7) or (enemyColor == piece.black and 4 <= j <= 5))):
                             # if pin is empty, then it is a check
                             if possiblePin == ():
                                 inCheck = True
@@ -216,8 +214,6 @@ class GameState():
                             else:
                                 pins.append(possiblePin)
                                 break
-                    else:
-                        break
                 else:
                     break
 
