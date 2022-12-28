@@ -8,7 +8,9 @@ class GameState():
         """ 
             8x8 2d array representing the board, each element is a 2 character string. The first character represents the color, second character represents the type of piece.
         """
-        self.board = fen.buildStartingBoard()
+        self.fenString = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+        # self.fenString = "8/8/P2K3P/8/8/8/pk5p/8 w KQkq - 0 1"
+        self.board = fen.buildBoard(self.fenString)
         self.whiteToMove = True
         self.moveLog = []
         self.whiteKingLocation = (7, 4)
@@ -234,7 +236,7 @@ class GameState():
     Gets all pawn moves for the pawn located at row, col and returns a list of moves
     
     TODO: 
-    - En passant, Pawn promotion
+    - En passant
     """
 
     def getPawnMoves(self, r, c, piece):
@@ -439,7 +441,7 @@ class GameState():
                 self.whiteKingLocation = (endRow, endCol)
             else:
                 self.blackKingLocation = (endRow, endCol)
-            inCheck = self.getAllPinsAndChecks(piece)
+            inCheck, pins, checks = self.getAllPinsAndChecks(piece)
             if not inCheck:
                 kingMoves.append(
                     Move((r, c), (endRow, endCol), self.board))
@@ -484,6 +486,11 @@ class Move():
         self.pieceCaptured = board[self.endRow][self.endCol]
         self.moveID = self.startRow * 1000 + self.startCol * \
             100 + self.endRow * 10 + self.endCol
+
+        piece = Piece()
+        self.pawnPromotion = (piece.getPieceType(self.pieceMoved) == piece.Pawn and (
+            self.endRow == 0 or self.endRow == 7))
+        self.promotionChoice = piece.Queen
 
     def getChessNotation(self):
         # can turn into real chess notation if need be
@@ -561,7 +568,6 @@ class Piece():
 
 
 class Fen:
-    startingFenString = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
     piece = Piece()
 
@@ -577,9 +583,6 @@ class Fen:
     # ? Init function not needed
     def __init__(self):
         self.squares = [None] * 64
-
-    def buildStartingBoard(self):
-        return self.buildBoard(self.startingFenString)
 
     def buildBoard(self, fenString):
         fenParts = fenString.split(" ")

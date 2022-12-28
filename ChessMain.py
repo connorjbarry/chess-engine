@@ -112,12 +112,18 @@ def main():
                     if len(playerCLicks) == 2:  # after 2nd click
                         move = Move(playerCLicks[0], playerCLicks[1], gs.board)
                         # prints the move in chess notation
-                        if move in validMoves:
-                            gs.makeMove(move)
-                            print(move.getChessNotation())
-                            moveMade = True
-                        selectedSquare = ()  # reset user clicks
-                        playerCLicks = []
+                        for i in range(len(validMoves)):
+                            if move == validMoves[i]:
+                                gs.makeMove(validMoves[i])
+                                print(move.getChessNotation())
+                                if validMoves[i].pawnPromotion:
+                                    gs.board[validMoves[i].endRow][validMoves[i].endCol] = \
+                                        piece.getPieceColor(
+                                        gs.board[validMoves[i].endRow][validMoves[i].endCol]) | \
+                                        validMoves[i].promotionChoice
+                                moveMade = True
+                            selectedSquare = ()  # reset user clicks
+                            playerCLicks = []
 
             # key handler
             elif e.type == pg.KEYDOWN:
