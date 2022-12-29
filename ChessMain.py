@@ -59,7 +59,7 @@ def main():
     screen.fill(pg.Color("white"))
     fen = Fen()
     gs = GameState(fen)
-    validMoves = gs.getValidMoves()
+    validMoves = gs.getLegalMoves()
     moveMade = False  # Flag variable for when a move is made
     loadPieceImages()
     # keeps track of the last click of the user (tuple: (row, col))
@@ -68,6 +68,7 @@ def main():
     playerCLicks = []
 
     running = True
+    gameOver = False
 
     while running:
         for e in pg.event.get():
@@ -75,45 +76,84 @@ def main():
                 running = False
             # mouse handler
             elif e.type == pg.MOUSEBUTTONDOWN:
-                location = pg.mouse.get_pos()  # gets (x,y) location of mouse
-                # gets row and column of mouse click (0-7) by floor dividing by square size
-                col = location[0] // SQUARE_SIZE
-                row = location[1] // SQUARE_SIZE
+                if not gameOver:
+                    location = pg.mouse.get_pos()  # gets (x,y) location of mouse
+                    # gets row and column of mouse click (0-7) by floor dividing by square size
+                    col = location[0] // SQUARE_SIZE
+                    row = location[1] // SQUARE_SIZE
 
-                # user clicked the same square twice
-                if selectedSquare == (row, col):
-                    selectedSquare = ()  # deselect
-                    playerCLicks = []  # clear player clicks
-                else:
-                    selectedSquare = (row, col)
-                    playerCLicks.append(selectedSquare)
+                    # user clicked the same square twice
+                    if selectedSquare == (row, col):
+                        selectedSquare = ()  # deselect
+                        playerCLicks = []  # clear player clicks
+                    else:
+                        selectedSquare = (row, col)
+                        playerCLicks.append(selectedSquare)
 
-                # Checks if the user selected an empty square on first click and resets the user clicks
-                if (len(playerCLicks) == 1) and (gs.board[row][col] == 0):
-                    selectedSquare = ()  # deselect
-                    playerCLicks = []
+                    # Checks if the user selected an empty square on first click and resets the user clicks
+                    if (len(playerCLicks) == 1) and (gs.board[row][col] == 0):
+                        selectedSquare = ()  # deselect
+                        playerCLicks = []
 
-                if len(playerCLicks) == 2:  # after 2nd click
-                    move = Move(playerCLicks[0], playerCLicks[1], gs.board)
-                    # prints the move in chess notation
-                    print(move.getChessNotation())
-                    if move in validMoves:
-                        gs.makeMove(move)
-                        moveMade = True
-                    selectedSquare = ()  # reset user clicks
-                    playerCLicks = []
+                    # check if user is selecting another piece of same color
+                    if (len(playerCLicks) > 1):
+                        # gets the color of the first piece selected
+                        firstPieceColor = piece.getPieceColor(
+                            gs.board[playerCLicks[0][0]][playerCLicks[0][1]])
+
+                        # gets the color of the second piece selected
+                        secondPieceColor = piece.getPieceColor(
+                            gs.board[playerCLicks[1][0]][playerCLicks[1][1]])
+                        # if the user selects a piece of the same color, it will deselect the first piece and select the new piece
+                        if firstPieceColor == secondPieceColor:
+                            selectedSquare = playerCLicks[1]
+                            playerCLicks = [selectedSquare]
+
+                    if len(playerCLicks) == 2:  # after 2nd click
+                        move = Move(playerCLicks[0], playerCLicks[1], gs.board)
+                        # prints the move in chess notation
+                        for i in range(len(validMoves)):
+                            if move == validMoves[i]:
+                                gs.makeMove(validMoves[i])
+                                print(move.getChessNotation())
+                                if validMoves[i].pawnPromotion:
+                                    gs.board[validMoves[i].endRow][validMoves[i].endCol] = \
+                                        piece.getPieceColor(
+                                        gs.board[validMoves[i].endRow][validMoves[i].endCol]) | \
+                                        validMoves[i].promotionChoice
+                                moveMade = True
+                            selectedSquare = ()  # reset user clicks
+                            playerCLicks = []
 
             # key handler
             elif e.type == pg.KEYDOWN:
                 if e.key == pg.K_z:
                     gs.undoMove()
                     moveMade = True
+                if e.key == pg.K_r:
+                    gs = GameState(fen)
+                    validMoves = gs.getLegalMoves()
+                    selectedSquare = ()
+                    playerCLicks = []
+                    moveMade = False
+                    gameOver = False
 
         if moveMade:
-            validMoves = gs.getValidMoves()
+            validMoves = gs.getLegalMoves()
             moveMade = False
 
-        drawGameState(screen, gs)
+        drawGameState(screen, gs, validMoves, selectedSquare)
+
+        if gs.checkmate:
+            gameOver = True
+            if gs.whiteToMove:
+                print("Black wins by checkmate")
+            else:
+                print("White wins by checkmate")
+        elif gs.stalemate:
+            gameOver = True
+            print("Stalemate")
+
         clock.tick(MAX_FPS)
         pg.display.flip()
 
@@ -123,9 +163,11 @@ def main():
 """
 
 
-def drawGameState(screen, gs):
+def drawGameState(screen, gs, validMoves, selectedSquare):
     # Draws squares on board
     drawBoard(screen)
+    # Highlights selected square and highlights moves from that square
+    highlightSquares(screen, gs, validMoves, selectedSquare)
     # Draws pieces on top of squares from gamestate
     drawPieces(screen, gs.board)
 
@@ -157,6 +199,24 @@ def drawPieces(screen, board):
             if imageFromPiece != None:
                 screen.blit(IMAGES[imageFromPiece], pg.Rect(
                     c * SQUARE_SIZE, r * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE))
+
+
+def highlightSquares(screen, gs, validMoves, selectedSquare):
+    if selectedSquare != ():
+        r, c = selectedSquare
+        if piece.getPieceColor(gs.board[r][c]) == (piece.white if gs.whiteToMove else piece.black):
+            # highlight selected square
+            s = pg.Surface((SQUARE_SIZE, SQUARE_SIZE))
+            s.set_alpha(100)
+            s.fill(pg.Color('blue'))
+            screen.blit(s, (c * SQUARE_SIZE, r * SQUARE_SIZE))
+            # highlight moves from that square
+            s.set_alpha(75)
+            s.fill(pg.Color('red'))
+            for move in validMoves:
+                if move.startRow == r and move.startCol == c:
+                    screen.blit(s, (move.endCol * SQUARE_SIZE,
+                                    move.endRow * SQUARE_SIZE))
 
 
 if __name__ == "__main__":
