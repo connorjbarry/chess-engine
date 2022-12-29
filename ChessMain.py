@@ -70,8 +70,8 @@ def main():
 
     running = True
     gameOver = False
-    playingWhite = False
-    playingBlack = False
+    playingWhite = False  # if a human is playing white
+    playingBlack = False  # if a human is playing black
 
     while running:
         playersTurn = (gs.whiteToMove and playingWhite) or (
@@ -143,8 +143,9 @@ def main():
                     moveMade = False
                     gameOver = False
 
+        # AI move finder
         if not gameOver and not playersTurn:
-            AIMove = findRandomMoveAI(validMoves)
+            AIMove = AI.findRandomMove(validMoves)
             gs.makeMove(AIMove)
             print(AIMove.getChessNotation())
             moveMade = True
