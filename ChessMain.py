@@ -3,6 +3,7 @@ This is the main file for the chess game.
 """
 
 from ChessEngine import *
+from ChessAI import *
 import pygame as pg
 
 
@@ -70,13 +71,21 @@ def main():
     running = True
     gameOver = False
 
+    playingWhite = False  # if a human is playing white
+    playingBlack = False  # if a human is playing black
+
+
     while running:
+        playersTurn = (gs.whiteToMove and playingWhite) or (
+            not gs.whiteToMove and playingBlack)
         for e in pg.event.get():
             if e.type == pg.QUIT:
                 running = False
             # mouse handler
             elif e.type == pg.MOUSEBUTTONDOWN:
-                if not gameOver:
+
+                if not gameOver and playersTurn:
+
                     location = pg.mouse.get_pos()  # gets (x,y) location of mouse
                     # gets row and column of mouse click (0-7) by floor dividing by square size
                     col = location[0] // SQUARE_SIZE
@@ -137,6 +146,13 @@ def main():
                     playerCLicks = []
                     moveMade = False
                     gameOver = False
+
+        # AI move finder
+        if not gameOver and not playersTurn:
+            AIMove = AI.findRandomMove(validMoves)
+            gs.makeMove(AIMove)
+            print(AIMove.getChessNotation())
+            moveMade = True
 
         if moveMade:
             validMoves = gs.getLegalMoves()
