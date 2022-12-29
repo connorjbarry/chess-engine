@@ -22,8 +22,10 @@ class GameState():
         self.stalemate = False
 
     """ 
+    Takes a move as a parameter and executes it 
+
     TODO:
-    This does not work on castling, en passant, pawn promotion
+    This does not work on castling, en passant
     """
 
     def makeMove(self, move):
@@ -75,6 +77,7 @@ class GameState():
         if self.inCheck:
             # There is only one check so we can block, take or move king
             if len(self.checks) == 1:
+                print("There is only one check", self.checks[0])
                 moves = self.getPsuedoLegalMoves()
                 check = self.checks[0]
                 checkRow = check[0]
@@ -104,10 +107,12 @@ class GameState():
 
                         # There is a double check or more, so king must move
             else:
+                print("There is a double check")
                 moves = self.getKingMoves(kingRow, kingCol, piece=Piece())
 
         # the king is not in check
         else:
+            print("The king is not in check")
             moves = self.getPsuedoLegalMoves()
 
         if len(moves) == 0:
@@ -202,17 +207,23 @@ class GameState():
                         pieceType = piece.getPieceType(endPiece)
 
                         # checks for piece and the direction that a given piece can move for capture
-                        #!Does not account for knights
-                        if (pieceType == piece.Rook and 0 <= j <= 3) or (pieceType == piece.Bishop and 4 <= j <= 7) or piece.Queen or (pieceType == piece.King and i == 1) or (pieceType == piece.Pawn and i == 1 and ((enemyColor == piece.white and 6 <= j <= 7) or (enemyColor == piece.black and 4 <= j <= 5))):
+                        #! Does not account for knights
+                        if (pieceType == piece.Rook and 0 <= j <= 3) or (pieceType == piece.Bishop and 4 <= j <= 7) or (pieceType == piece.Queen) or (pieceType == piece.King and i == 1) or (pieceType == piece.Pawn and i == 1 and ((enemyColor == piece.white and 6 <= j <= 7) or (enemyColor == piece.black and 4 <= j <= 5))):
                             # if pin is empty, then it is a check
                             if possiblePin == ():
                                 inCheck = True
+                                print("Getting inside of pieceType if statement")
+                                print(pieceType)
+                                print(direction)
                                 checks.append((endRow, endCol, direction))
                                 break
                             # otherwise a piece is in the way, which is now pinned
                             else:
                                 pins.append(possiblePin)
                                 break
+                        # if the piece is not a piece that can move in the given direction, then it is not a check or pin
+                        else:
+                            break
                 else:
                     break
 
@@ -430,25 +441,24 @@ class GameState():
             endRow = r + move[0]
             endCol = c + move[1]
             # check if move not on board
-            if (endRow < 0 or endRow >= 8) or (endCol < 0 or endCol >= 8):
-                continue
-
-            endPositionColor = self.checkTurn(
-                self.board[endRow][endCol], piece)
-            if endPositionColor == allyColor:
-                break
-            if allyColor == piece.white:
-                self.whiteKingLocation = (endRow, endCol)
-            else:
-                self.blackKingLocation = (endRow, endCol)
-            inCheck, pins, checks = self.getAllPinsAndChecks(piece)
-            if not inCheck:
-                kingMoves.append(
-                    Move((r, c), (endRow, endCol), self.board))
-            if allyColor == piece.white:
-                self.whiteKingLocation = (r, c)
-            else:
-                self.blackKingLocation = (r, c)
+            if 0 <= endRow < 8 and 0 <= endCol < 8:
+                endPositionColor = self.checkTurn(
+                    self.board[endRow][endCol], piece)
+                if endPositionColor != allyColor:
+                    if allyColor == piece.white:
+                        self.whiteKingLocation = (endRow, endCol)
+                    else:
+                        self.blackKingLocation = (endRow, endCol)
+                    inCheck, pins, checks = self.getAllPinsAndChecks(piece)
+                    if not inCheck:
+                        kingMoves.append(
+                            Move((r, c), (endRow, endCol), self.board))
+                    if allyColor == piece.white:
+                        self.whiteKingLocation = (r, c)
+                    else:
+                        self.blackKingLocation = (r, c)
+                else:
+                    continue
 
         return kingMoves
 
@@ -457,8 +467,6 @@ class GameState():
     """
 
     def checkTurn(self, chessPiece, piece):
-        if chessPiece == 0:
-            return None
         return piece.getPieceColor(chessPiece)
 
 
