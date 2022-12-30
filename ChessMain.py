@@ -71,9 +71,8 @@ def main():
     running = True
     gameOver = False
 
-    playingWhite = False  # if a human is playing white
-    playingBlack = False  # if a human is playing black
-
+    playingWhite = True  # if a human is playing white
+    playingBlack = True  # if a human is playing black
 
     while running:
         playersTurn = (gs.whiteToMove and playingWhite) or (
