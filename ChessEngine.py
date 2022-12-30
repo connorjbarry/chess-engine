@@ -8,8 +8,8 @@ class GameState():
         """ 
             8x8 2d array representing the board, each element is a 2 character string. The first character represents the color, second character represents the type of piece.
         """
-        self.fenString = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-        # self.fenString = "8/8/P2K3P/8/8/8/pk5p/8 w KQkq - 0 1"
+        # self.fenString = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+        self.fenString = "8/8/P2K3P/8/8/8/pk5p/8 w KQkq - 0 1"
         self.board = fen.buildBoard(self.fenString)
         self.whiteToMove = True
         self.moveLog = []
@@ -32,7 +32,6 @@ class GameState():
         self.board[move.startRow][move.startCol] = 0
         self.board[move.endRow][move.endCol] = move.pieceMoved
         self.moveLog.append(move)
-        self.whiteToMove = not self.whiteToMove
         # update king's location if moved
         piece = Piece()
         if piece.getPieceType(move.pieceMoved) == piece.King:
@@ -40,6 +39,8 @@ class GameState():
                 self.whiteKingLocation = (move.endRow, move.endCol)
             else:
                 self.blackKingLocation = (move.endRow, move.endCol)
+
+        self.whiteToMove = not self.whiteToMove
 
     """ 
     Undo the last move made
@@ -50,7 +51,6 @@ class GameState():
             move = self.moveLog.pop()
             self.board[move.startRow][move.startCol] = move.pieceMoved
             self.board[move.endRow][move.endCol] = move.pieceCaptured
-            self.whiteToMove = not self.whiteToMove
             # update king's location if moved
             piece = Piece()
             if piece.getPieceType(move.pieceMoved) == piece.King:
@@ -58,6 +58,8 @@ class GameState():
                     self.whiteKingLocation = (move.startRow, move.startCol)
                 else:
                     self.blackKingLocation = (move.startRow, move.startCol)
+
+            self.whiteToMove = not self.whiteToMove
 
     """ 
     Responsible for all the logic that determines if a move is valid, including checks
@@ -115,9 +117,10 @@ class GameState():
             print("The king is not in check")
             moves = self.getPsuedoLegalMoves()
 
+        print(self.checks)
         if len(moves) == 0:
             # checkmate
-            if self.inCheck:
+            if self.kingInCheck():
                 self.checkmate = True
             # stalemate
             else:
@@ -128,6 +131,29 @@ class GameState():
             self.stalemate = False
 
         return moves
+
+    """ 
+        Helper function to check if king is in check
+    """
+
+    def kingInCheck(self):
+        if self.whiteToMove:
+            return self.squareUnderAttack(self.whiteKingLocation[0], self.whiteKingLocation[1])
+        else:
+            return self.squareUnderAttack(self.blackKingLocation[0], self.blackKingLocation[1])
+
+    """
+        Helper function to check if a square is under attack
+    """
+
+    def squareUnderAttack(self, r, c):
+        self.whiteToMove = not self.whiteToMove
+        oppMoves = self.getPsuedoLegalMoves()
+        self.whiteToMove = not self.whiteToMove
+        for move in oppMoves:
+            if move.endRow == r and move.endCol == c:
+                return True
+        return False
 
     """ 
     Responsible for all valid moves of a given piece 
@@ -195,26 +221,25 @@ class GameState():
                 # ensures endRow and endCol are on the board
                 if 0 <= endRow < 8 and 0 <= endCol < 8:
                     endPiece = self.board[endRow][endCol]
+                    endPieceColor = piece.getPieceColor(endPiece)
                     # Checks if the piece in the direction is ally for possible pin
-                    if piece.getPieceColor(endPiece) == allyColor:
+                    if endPieceColor == allyColor:
                         if possiblePin == ():
                             possiblePin = (endRow, endCol, direction)
                         # already an ally piece in direction, no possible pin or check
                         else:
                             break
-                    elif piece.getPieceColor(endPiece) == enemyColor:
+                    elif endPieceColor == enemyColor:
+                        print(endPiece, endPieceColor, enemyColor)
                         # gets the type of piece in direction to check if it can move in given direction
-                        pieceType = piece.getPieceType(endPiece)
+                        enemyPieceType = piece.getPieceType(endPiece)
 
                         # checks for piece and the direction that a given piece can move for capture
                         #! Does not account for knights
-                        if (pieceType == piece.Rook and 0 <= j <= 3) or (pieceType == piece.Bishop and 4 <= j <= 7) or (pieceType == piece.Queen) or (pieceType == piece.King and i == 1) or (pieceType == piece.Pawn and i == 1 and ((enemyColor == piece.white and 6 <= j <= 7) or (enemyColor == piece.black and 4 <= j <= 5))):
+                        if ((enemyPieceType == piece.Rook and 0 <= j <= 3) or (enemyPieceType == piece.Bishop and 4 <= j <= 7) or (enemyPieceType == piece.Queen) or (enemyPieceType == piece.King and i == 1) or (enemyPieceType == piece.Pawn and i == 1 and ((enemyColor == piece.white and 6 <= j <= 7) or (enemyColor == piece.black and 4 <= j <= 5)))):
                             # if pin is empty, then it is a check
                             if possiblePin == ():
                                 inCheck = True
-                                print("Getting inside of pieceType if statement")
-                                print(pieceType)
-                                print(direction)
                                 checks.append((endRow, endCol, direction))
                                 break
                             # otherwise a piece is in the way, which is now pinned
@@ -457,8 +482,6 @@ class GameState():
                         self.whiteKingLocation = (r, c)
                     else:
                         self.blackKingLocation = (r, c)
-                else:
-                    continue
 
         return kingMoves
 
@@ -609,7 +632,7 @@ class Fen:
             board_row = []
             for char in row:
                 if char.isdigit():
-                    for i in range(int(char)):
+                    for _ in range(int(char)):
                         board_row.append(0)
                 else:
                     board_row.append(self.getPiece(char))
