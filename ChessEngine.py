@@ -8,8 +8,8 @@ class GameState():
         """ 
             8x8 2d array representing the board, each element is a 2 character string. The first character represents the color, second character represents the type of piece.
         """
-        self.fenString = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-        # self.fenString = "8/8/P2K3P/8/8/8/pk5p/8 w KQkq - 0 1"
+        # self.fenString = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+        self.fenString = "8/8/P2K3P/8/8/8/pk5p/8 w KQkq - 0 1"
         self.board = fen.buildBoard(self.fenString)
         self.whiteToMove = True
         self.moveLog = []

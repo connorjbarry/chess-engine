@@ -5,6 +5,7 @@ This is the main file for the chess game.
 from ChessEngine import *
 from ChessAI import *
 import pygame as pg
+import time
 
 
 # --- Global Variables ---
@@ -149,9 +150,17 @@ def main():
         # AI move finder
         if not gameOver and not playersTurn:
             AIMove = AI.findRandomMove(validMoves)
-            gs.makeMove(AIMove)
-            print(AIMove.getChessNotation())
+            for i in range(len(validMoves)):
+                if AIMove == validMoves[i]:
+                    gs.makeMove(validMoves[i])
+                    print(AIMove.getChessNotation())
+                    if validMoves[i].pawnPromotion:
+                        gs.board[validMoves[i].endRow][validMoves[i].endCol] = \
+                            piece.getPieceColor(
+                            gs.board[validMoves[i].endRow][validMoves[i].endCol]) | \
+                            validMoves[i].promotionChoice
             moveMade = True
+            time.sleep(1)
 
         if moveMade:
             validMoves = gs.getLegalMoves()
