@@ -8,8 +8,8 @@ class GameState():
         """ 
             8x8 2d array representing the board, each element is a 2 character string. The first character represents the color, second character represents the type of piece.
         """
-        # self.fenString = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-        self.fenString = "8/8/P2K3P/8/8/8/pk5p/8 w KQkq - 0 1"
+        self.fenString = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+        # self.fenString = "8/8/P2K3P/8/8/8/pk5p/8 w KQkq - 0 1"
         self.board = fen.buildBoard(self.fenString)
         self.whiteToMove = True
         self.moveLog = []
@@ -79,7 +79,6 @@ class GameState():
         if self.inCheck:
             # There is only one check so we can block, take or move king
             if len(self.checks) == 1:
-                print("There is only one check", self.checks[0])
                 moves = self.getPsuedoLegalMoves()
                 check = self.checks[0]
                 checkRow = check[0]
@@ -109,15 +108,12 @@ class GameState():
 
                         # There is a double check or more, so king must move
             else:
-                print("There is a double check")
                 moves = self.getKingMoves(kingRow, kingCol, piece=Piece())
 
         # the king is not in check
         else:
-            print("The king is not in check")
             moves = self.getPsuedoLegalMoves()
 
-        print(self.checks)
         if len(moves) == 0:
             # checkmate
             if self.kingInCheck():
@@ -230,7 +226,6 @@ class GameState():
                         else:
                             break
                     elif endPieceColor == enemyColor:
-                        print(endPiece, endPieceColor, enemyColor)
                         # gets the type of piece in direction to check if it can move in given direction
                         enemyPieceType = piece.getPieceType(endPiece)
 
