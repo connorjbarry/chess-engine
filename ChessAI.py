@@ -1,8 +1,10 @@
 import random
 from ChessEngine import *
+from EvaluateState import *
 
 fen = Fen()
 gs = GameState(fen)
+boardEval = Evaluate()
 
 
 class AI():
@@ -15,6 +17,9 @@ class AI():
     """
 
     def findRandomMove(self, validMoves):
+        evaluation = boardEval.evaluatePieceValues(self.gs)
+        print(
+            f'Evaluation for {"white" if self.gs.whiteToMove else "black"}: {evaluation if self.gs.whiteToMove else -evaluation}')
         return random.choice(validMoves)
 
     """  

@@ -72,6 +72,7 @@ def main():
 
     running = True
     gameOver = False
+    useTestBench = False
 
     playingWhite = False  # if a human is playing white
     playingBlack = False  # if a human is playing black
@@ -150,21 +151,18 @@ def main():
 
         # AI move finder
         if not gameOver and not playersTurn:
-            numPositions = 0
-            numPositions += ai.testMoveGeneration(
-                validMoves=validMoves, depth=1)
-            # AIMove = ai.findRandomMove(validMoves)
-            # for i in range(len(validMoves)):
-            #     if AIMove == validMoves[i]:
-            #         gs.makeMove(validMoves[i])
-            #         print(AIMove.getChessNotation())
-            #         if validMoves[i].pawnPromotion:
-            #             gs.board[validMoves[i].endRow][validMoves[i].endCol] = \
-            #                 piece.getPieceColor(
-            #                 gs.board[validMoves[i].endRow][validMoves[i].endCol]) | \
-            #                 validMoves[i].promotionChoice
+            AIMove = ai.findRandomMove(validMoves)
+            for i in range(len(validMoves)):
+                if AIMove == validMoves[i]:
+                    gs.makeMove(validMoves[i])
+                    print(AIMove.getChessNotation())
+                    if validMoves[i].pawnPromotion:
+                        gs.board[validMoves[i].endRow][validMoves[i].endCol] = \
+                            piece.getPieceColor(
+                            gs.board[validMoves[i].endRow][validMoves[i].endCol]) | \
+                            validMoves[i].promotionChoice
             moveMade = True
-            time.sleep(1)
+            time.sleep(2)
 
         if moveMade:
             validMoves = gs.getLegalMoves()
@@ -185,7 +183,8 @@ def main():
         clock.tick(MAX_FPS)
         pg.display.flip()
 
-    # testBench(ai, 4)
+    if useTestBench:
+        testBench(ai, 3)
 
 
 """ 
@@ -256,7 +255,7 @@ def testBench(ai, depth):
         numPositions += ai.testMoveGeneration(depth=i)
         end = time.time()
         print(
-            f'At depth {i}, there are {numPositions} positions\n TIME: {end-start:.2f} seconds')
+            f'At depth {i}, there are {numPositions} positions\n TIME: {end-start:.2f} seconds\n')
 
 
 if __name__ == "__main__":
