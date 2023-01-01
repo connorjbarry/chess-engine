@@ -639,3 +639,113 @@ class Fen:
         pieceColor = piece.white if char.isupper() else piece.black
         pieceType = self.pieceTypeFromSymbol[char.lower()]
         return pieceColor | pieceType
+
+
+""" 
+Counts all the material on the board and returns a dictionary with the material count for each piece
+"""
+
+
+class Material():
+    def __init__(self):
+        self.piece = Piece()
+        self.pawnMaterial = {
+            'white': 0,
+            'black': 0
+        }
+        self.knightMaterial = {
+            'white': 0,
+            'black': 0
+        }
+        self.bishopMaterial = {
+            'white': 0,
+            'black': 0
+        }
+        self.rookMaterial = {
+            'white': 0,
+            'black': 0
+        }
+        self.queenMaterial = {
+            'white': 0,
+            'black': 0
+        }
+        self.kingMaterial = {
+            'white': 0,
+            'black': 0
+        }
+
+    def getPawnMaterial(self, gs):
+        for row in range(len(gs.board)):
+            for col in range(len(gs.board[row])):
+                if col == 0:
+                    continue
+                if self.piece.getPieceType(gs.board[row][col]) == self.piece.Pawn:
+                    if self.piece.getPieceColor(gs.board[row][col]) == self.piece.white:
+                        self.pawnMaterial['white'] += 1
+                    else:
+                        self.pawnMaterial['black'] += 1
+        return self.pawnMaterial
+
+    def getKnightMaterial(self, gs):
+        for row in range(len(gs.board)):
+            for col in range(len(gs.board[row])):
+                if gs.board[row][col] == 0:
+                    continue
+                if self.piece.getPieceType(gs.board[row][col]) == self.piece.Knight:
+                    if self.piece.getPieceColor(gs.board[row][col]) == self.piece.white:
+                        self.knightMaterial['white'] += 1
+                    else:
+                        self.knightMaterial['black'] += 1
+        return self.knightMaterial
+
+    def getBishopMaterial(self, gs):
+        for row in range(len(gs.board)):
+            for col in range(len(gs.board[row])):
+                if gs.board[row][col] == 0:
+                    continue
+                if self.piece.getPieceType(gs.board[row][col]) == self.piece.Bishop:
+                    if self.piece.getPieceColor(gs.board[row][col]) == self.piece.white:
+                        self.bishopMaterial['white'] += 1
+                    else:
+                        self.bishopMaterial['black'] += 1
+
+        return self.bishopMaterial
+
+    def getRookMaterial(self, gs):
+        for row in range(len(gs.board)):
+            for col in range(len(gs.board[row])):
+                if gs.board[row][col] == 0:
+                    continue
+                if self.piece.getPieceType(gs.board[row][col]) == self.piece.Rook:
+                    if self.piece.getPieceColor(gs.board[row][col]) == self.piece.white:
+                        self.rookMaterial['white'] += 1
+                    else:
+                        self.rookMaterial['black'] += 1
+
+        return self.rookMaterial
+
+    def getQueenMaterial(self, gs):
+        for row in range(len(gs.board)):
+            for col in range(len(gs.board[row])):
+                if gs.board[row][col] == 0:
+                    continue
+                if self.piece.getPieceType(gs.board[row][col]) == self.piece.Queen:
+                    if self.piece.getPieceColor(gs.board[row][col]) == self.piece.white:
+                        self.queenMaterial['white'] += 1
+                    else:
+                        self.queenMaterial['black'] += 1
+
+        return self.queenMaterial
+
+    def getKingMaterial(self, gs):
+        for row in range(len(gs.board)):
+            for col in range(len(gs.board[row])):
+                if gs.board[row][col] == 0:
+                    continue
+                if self.piece.getPieceType(gs.board[row][col]) == self.piece.King:
+                    if self.piece.getPieceColor(gs.board[row][col]) == self.piece.white:
+                        self.kingMaterial['white'] += 1
+                    else:
+                        self.kingMaterial['black'] += 1
+
+        return self.kingMaterial
