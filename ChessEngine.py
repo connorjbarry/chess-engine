@@ -8,8 +8,8 @@ class GameState():
         """ 
             8x8 2d array representing the board, each element is a 2 character string. The first character represents the color, second character represents the type of piece.
         """
-        self.fenString = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-        # self.fenString = "8/8/P2K3P/8/8/8/pk5p/8 w KQkq - 0 1"
+        # self.fenString = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+        self.fenString = "r3k2r/pppppppp/8/8/8/8/PPPPPnPP/R3K2R w KQkq - 0 1"
         self.board = fen.buildBoard(self.fenString)
         self.whiteToMove = True
         self.moveLog = []
@@ -20,6 +20,12 @@ class GameState():
         self.checks = []
         self.checkmate = False
         self.stalemate = False
+        self.currentCastleRights = Castle(True, True, True, True)
+        self.castleLog = [Castle(self.currentCastleRights.whiteKingSideCastle,
+                                 self.currentCastleRights.whiteQueenSideCastle,
+                                 self.currentCastleRights.blackKingSideCastle,
+                                 self.currentCastleRights.blackQueenSideCastle
+                                 )]
 
     """ 
     Takes a move as a parameter and executes it 
@@ -42,6 +48,35 @@ class GameState():
 
         self.whiteToMove = not self.whiteToMove
 
+        # castle move
+        if move.isCastleMove:
+            if move.endCol - move.startCol == 2:
+                # kingside castle
+                self.board[move.endRow][move.endCol -
+                                        1] = self.board[move.endRow][move.endCol + 1]
+                self.board[move.endRow][move.endCol + 1] = 0
+            else:
+                # queenside castle
+                self.board[move.endRow][move.endCol +
+                                        1] = self.board[move.endRow][move.endCol - 2]
+                self.board[move.endRow][move.endCol - 2] = 0
+
+        # castle rights
+
+        self.updateCastleRights(move, piece)
+        if self.castleLog is None:
+            self.castleLog = [Castle(self.currentCastleRights.whiteKingSideCastle,
+                                     self.currentCastleRights.whiteQueenSideCastle,
+                                     self.currentCastleRights.blackKingSideCastle,
+                                     self.currentCastleRights.blackQueenSideCastle
+                                     )]
+        else:
+            self.castleLog.append(Castle(self.currentCastleRights.whiteKingSideCastle,
+                                         self.currentCastleRights.whiteQueenSideCastle,
+                                         self.currentCastleRights.blackKingSideCastle,
+                                         self.currentCastleRights.blackQueenSideCastle
+                                         ))
+
     """ 
     Undo the last move made
     """
@@ -61,6 +96,24 @@ class GameState():
 
             self.whiteToMove = not self.whiteToMove
 
+        # undo castle rights
+
+        self.castleLog.pop()
+        self.castleLog = self.castleLog[-1]
+
+        # undo castle move
+        if move.isCastleMove:
+            if move.endCol - move.startCol == 2:
+                # kingside castle
+                self.board[move.endRow][move.endCol +
+                                        1] = self.board[move.endRow][move.endCol - 1]
+                self.board[move.endRow][move.endCol - 1] = 0
+            else:
+                # queenside castle
+                self.board[move.endRow][move.endCol -
+                                        2] = self.board[move.endRow][move.endCol + 1]
+                self.board[move.endRow][move.endCol + 1] = 0
+
     """ 
     Responsible for all the logic that determines if a move is valid, including checks
     """
@@ -68,6 +121,7 @@ class GameState():
     def getLegalMoves(self):
         piece = Piece()
         moves = []
+
         self.inCheck, self.pins, self.checks = self.getAllPinsAndChecks(piece)
         if self.whiteToMove:
             kingRow = self.whiteKingLocation[0]
@@ -113,6 +167,12 @@ class GameState():
         # the king is not in check
         else:
             moves = self.getPsuedoLegalMoves()
+            if self.whiteToMove:
+                moves.extend(self.getCastleMoves(
+                    self.whiteKingLocation[0], self.whiteKingLocation[1], moves))
+            else:
+                moves.extend(self.getCastleMoves(
+                    self.blackKingLocation[0], self.blackKingLocation[1], moves))
 
         if len(moves) == 0:
             # checkmate
@@ -262,6 +322,30 @@ class GameState():
                     checks.append((endRow, endCol, move))
 
         return inCheck, pins, checks
+
+    """ 
+        Updates the castle rights given a certain move on the board
+    """
+
+    def updateCastleRights(self, move, piece):
+        if move.pieceMoved == (piece.white | piece.King):
+            self.whiteCastleKingside = False
+            self.whiteCastleQueenside = False
+        elif move.pieceMoved == (piece.black | piece.King):
+            self.blackCastleKingside = False
+            self.blackCastleQueenside = False
+        elif move.pieceMoved == (piece.white | piece.Rook) or move.pieceCaptured == (piece.white | piece.Rook):
+            if move.startRow == 7:
+                if move.startCol == 0:
+                    self.whiteCastleQueenside = False
+                elif move.startCol == 7:
+                    self.whiteCastleKingside = False
+        elif move.pieceMoved == (piece.black | piece.Rook) | move.pieceCaptured == (piece.black | piece.Rook):
+            if move.startRow == 0:
+                if move.startCol == 0:
+                    self.blackCastleQueenside = False
+                elif move.startCol == 7:
+                    self.blackCastleKingside = False
 
     """ 
     Gets all pawn moves for the pawn located at row, col and returns a list of moves
@@ -480,12 +564,69 @@ class GameState():
 
         return kingMoves
 
+    """ 
+        Generates all valid castle moves for the king 
+    """
+
+    def getCastleMoves(self, r, c, piece):
+        castleMoves = []
+        if self.squareUnderAttack(r, c):
+            return castleMoves
+
+        if (self.whiteToMove and self.currentCastleRights.whiteKingSideCastle) or (not self.whiteToMove and self.currentCastleRights.blackKingSideCastle):
+            castleMoves.extend(self.getKingSideCastleMoves(r, c, piece))
+
+        if (self.whiteToMove and self.currentCastleRights.whiteQueenSideCastle) or (not self.whiteToMove and self.currentCastleRights.blackQueenSideCastle):
+            castleMoves.extend(
+                self.getQueenSideCastleMoves(r, c, piece))
+
+        return castleMoves
+
+    """ 
+        Gets all the valid king side castle moves for the king
+    """
+
+    def getKingSideCastleMoves(self, r, c, piece):
+        kingSideCastleMoves = []
+        if self.board[r][c+1] == 0 or self.board[r][c+2] == 0:
+            if not self.squareUnderAttack(r, c+1) and not self.squareUnderAttack(r, c+2):
+                kingSideCastleMoves.append(
+                    Move((r, c), (r, c+2), self.board, isCastleMove=True))
+
+        return kingSideCastleMoves
+
+    """
+        Gets all the valid queen side castle moves for the king
+    """
+
+    def getQueenSideCastleMoves(self, r, c, piece):
+        queenSideCastleMoves = []
+        if self.board[r][c-1] == 0 and self.board[r][c-2] == 0 and self.board[r][c-3] == 0:
+            if not self.squareUnderAttack(r, c-1) and not self.squareUnderAttack(r, c-2):
+                queenSideCastleMoves.append(
+                    Move((r, c), (r, c-2), self.board, isCastleMove=True))
+
+        return queenSideCastleMoves
+
     """
         Gets the color of the piece passed into the function
     """
 
     def checkTurn(self, chessPiece, piece):
         return piece.getPieceColor(chessPiece)
+
+
+""" 
+    Determines the validity of a castle move, acts as a storage class for the castle rights
+"""
+
+
+class Castle():
+    def __init__(self, whiteKingSideCastle, whiteQueenSideCastle, blackKingSideCastle, blackQueenSideCastle):
+        self.whiteKingSideCastle = whiteKingSideCastle
+        self.whiteQueenSideCastle = whiteQueenSideCastle
+        self.blackKingSideCastle = blackKingSideCastle
+        self.blackQueenSideCastle = blackQueenSideCastle
 
 
 """ 
@@ -503,7 +644,7 @@ class Move():
                    "e": 4, "f": 5, "g": 6, "h": 7}
     colsToFiles = {v: k for k, v in filesToCols.items()}
 
-    def __init__(self, startSq, endSq, board):
+    def __init__(self, startSq, endSq, board, isCastleMove=False):
         self.startRow = startSq[0]
         self.startCol = startSq[1]
         self.endRow = endSq[0]
@@ -517,6 +658,8 @@ class Move():
         self.pawnPromotion = (piece.getPieceType(self.pieceMoved) == piece.Pawn and (
             self.endRow == 0 or self.endRow == 7))
         self.promotionChoice = piece.Queen
+
+        self.isCastleMove = isCastleMove
 
     def getChessNotation(self):
         # can turn into real chess notation if need be
@@ -675,6 +818,8 @@ class Material():
         }
 
     def getPawnMaterial(self, gs):
+        self.pawnMaterial['white'] = 0
+        self.pawnMaterial['black'] = 0
         for row in range(len(gs.board)):
             for col in range(len(gs.board[row])):
                 if col == 0:
@@ -682,11 +827,19 @@ class Material():
                 if self.piece.getPieceType(gs.board[row][col]) == self.piece.Pawn:
                     if self.piece.getPieceColor(gs.board[row][col]) == self.piece.white:
                         self.pawnMaterial['white'] += 1
+                        if self.pawnMaterial['white'] > 8:
+                            self.pawnMaterial['white'] = 8
                     else:
                         self.pawnMaterial['black'] += 1
+                        if self.pawnMaterial['black'] > 8:
+                            self.pawnMaterial['black'] = 8
+
         return self.pawnMaterial
 
     def getKnightMaterial(self, gs):
+        self.knightMaterial['white'] = 0
+        self.knightMaterial['black'] = 0
+
         for row in range(len(gs.board)):
             for col in range(len(gs.board[row])):
                 if gs.board[row][col] == 0:
@@ -694,11 +847,19 @@ class Material():
                 if self.piece.getPieceType(gs.board[row][col]) == self.piece.Knight:
                     if self.piece.getPieceColor(gs.board[row][col]) == self.piece.white:
                         self.knightMaterial['white'] += 1
+                        if self.knightMaterial['white'] > 2:
+                            self.knightMaterial['white'] = 2
                     else:
                         self.knightMaterial['black'] += 1
+                        if self.knightMaterial['black'] > 2:
+                            self.knightMaterial['black'] = 2
+
         return self.knightMaterial
 
     def getBishopMaterial(self, gs):
+        self.bishopMaterial['white'] = 0
+        self.bishopMaterial['black'] = 0
+
         for row in range(len(gs.board)):
             for col in range(len(gs.board[row])):
                 if gs.board[row][col] == 0:
@@ -706,12 +867,19 @@ class Material():
                 if self.piece.getPieceType(gs.board[row][col]) == self.piece.Bishop:
                     if self.piece.getPieceColor(gs.board[row][col]) == self.piece.white:
                         self.bishopMaterial['white'] += 1
+                        if self.bishopMaterial['white'] > 2:
+                            self.bishopMaterial['white'] = 2
                     else:
                         self.bishopMaterial['black'] += 1
+                        if self.bishopMaterial['black'] > 2:
+                            self.bishopMaterial['black'] = 2
 
         return self.bishopMaterial
 
     def getRookMaterial(self, gs):
+        self.rookMaterial['white'] = 0
+        self.rookMaterial['black'] = 0
+
         for row in range(len(gs.board)):
             for col in range(len(gs.board[row])):
                 if gs.board[row][col] == 0:
@@ -719,12 +887,18 @@ class Material():
                 if self.piece.getPieceType(gs.board[row][col]) == self.piece.Rook:
                     if self.piece.getPieceColor(gs.board[row][col]) == self.piece.white:
                         self.rookMaterial['white'] += 1
+                        if self.rookMaterial['white'] > 2:
+                            self.rookMaterial['white'] = 2
                     else:
                         self.rookMaterial['black'] += 1
+                        if self.rookMaterial['black'] > 2:
+                            self.rookMaterial['black'] = 2
 
         return self.rookMaterial
 
     def getQueenMaterial(self, gs):
+        self.queenMaterial['white'] = 0
+        self.queenMaterial['black'] = 0
         for row in range(len(gs.board)):
             for col in range(len(gs.board[row])):
                 if gs.board[row][col] == 0:
@@ -732,12 +906,18 @@ class Material():
                 if self.piece.getPieceType(gs.board[row][col]) == self.piece.Queen:
                     if self.piece.getPieceColor(gs.board[row][col]) == self.piece.white:
                         self.queenMaterial['white'] += 1
+                        if self.queenMaterial['white'] > 1:
+                            self.queenMaterial['white'] = 1
                     else:
                         self.queenMaterial['black'] += 1
+                        if self.queenMaterial['black'] > 1:
+                            self.queenMaterial['black'] = 1
 
         return self.queenMaterial
 
     def getKingMaterial(self, gs):
+        self.kingMaterial['white'] = 0
+        self.kingMaterial['black'] = 0
         for row in range(len(gs.board)):
             for col in range(len(gs.board[row])):
                 if gs.board[row][col] == 0:
@@ -745,7 +925,11 @@ class Material():
                 if self.piece.getPieceType(gs.board[row][col]) == self.piece.King:
                     if self.piece.getPieceColor(gs.board[row][col]) == self.piece.white:
                         self.kingMaterial['white'] += 1
+                        if self.kingMaterial['white'] > 1:
+                            self.kingMaterial['white'] = 1
                     else:
                         self.kingMaterial['black'] += 1
+                        if self.kingMaterial['black'] > 1:
+                            self.kingMaterial['black'] = 1
 
         return self.kingMaterial

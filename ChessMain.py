@@ -74,8 +74,8 @@ def main():
     gameOver = False
     useTestBench = False
 
-    playingWhite = False  # if a human is playing white
-    playingBlack = False  # if a human is playing black
+    playingWhite = True  # if a human is playing white
+    playingBlack = True  # if a human is playing black
 
     while running:
         playersTurn = (gs.whiteToMove and playingWhite) or (
@@ -151,7 +151,10 @@ def main():
 
         # AI move finder
         if not gameOver and not playersTurn:
-            AIMove = ai.findRandomMove(validMoves)
+            AIMove = ai.findBestMove(gs, validMoves)
+            if AIMove == None:
+                AIMove = ai.findRandomMove(validMoves)
+                print("AI move was random")
             for i in range(len(validMoves)):
                 if AIMove == validMoves[i]:
                     gs.makeMove(validMoves[i])
@@ -162,7 +165,7 @@ def main():
                             gs.board[validMoves[i].endRow][validMoves[i].endCol]) | \
                             validMoves[i].promotionChoice
             moveMade = True
-            time.sleep(2)
+            time.sleep(1)
 
         if moveMade:
             validMoves = gs.getLegalMoves()
