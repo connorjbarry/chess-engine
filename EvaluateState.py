@@ -3,6 +3,7 @@ from ChessEngine import *
 
 piece = Piece()
 material = Material()
+CHECKMATE = 9999
 
 
 class Evaluate:
@@ -24,32 +25,20 @@ class Evaluate:
     def evaluatePieceValues(self, gs):
         if gs.checkmate:
             if gs.whiteToMove:
-                return -9999
+                return -CHECKMATE
             else:
-                return 9999
+                return CHECKMATE
         elif gs.stalemate:
             return 0
 
-        pawnMaterial = material.getPawnMaterial(gs)
-        knightMaterial = material.getKnightMaterial(gs)
-        bishopMaterial = material.getBishopMaterial(gs)
-        rookMaterial = material.getRookMaterial(gs)
-        queenMaterial = material.getQueenMaterial(gs)
-        kingMaterial = material.getKingMaterial(gs)
-
         evaluation = 0
 
-        evaluation += self.pieceEval[piece.Pawn] * \
-            (pawnMaterial['white'] - pawnMaterial['black'])
-        evaluation += self.pieceEval[piece.Knight] * \
-            (knightMaterial['white'] - knightMaterial['black'])
-        evaluation += self.pieceEval[piece.Bishop] * \
-            (bishopMaterial['white'] - bishopMaterial['black'])
-        evaluation += self.pieceEval[piece.Rook] * \
-            (rookMaterial['white'] - rookMaterial['black'])
-        evaluation += self.pieceEval[piece.Queen] * \
-            (queenMaterial['white'] - queenMaterial['black'])
-        evaluation += self.pieceEval[piece.King] * \
-            (kingMaterial['white'] - kingMaterial['black'])
+        for row in range(len(gs.board)):
+            for col in range(len(gs.board[row])):
+                pieceType = piece.getPieceType(gs.board[row][col])
+                if gs.whiteToMove:
+                    evaluation += self.pieceEval[pieceType]
+                else:
+                    evaluation -= self.pieceEval[pieceType]
 
         return evaluation
