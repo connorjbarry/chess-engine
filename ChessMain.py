@@ -74,7 +74,9 @@ def main():
     gameOver = False
     useTestBench = False
 
-    playingWhite = True  # if a human is playing white
+
+    playingWhite = True   # if a human is playing white
+
     playingBlack = True  # if a human is playing black
 
     while running:
@@ -151,6 +153,7 @@ def main():
 
         # AI move finder
         if not gameOver and not playersTurn:
+
             AIMove = ai.findBestMove(gs, validMoves)
             if AIMove == None:
                 AIMove = ai.findRandomMove(validMoves)
