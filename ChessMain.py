@@ -72,8 +72,11 @@ def main():
 
     running = True
     gameOver = False
+    useTestBench = False
+
 
     playingWhite = True   # if a human is playing white
+
     playingBlack = True  # if a human is playing black
 
     while running:
@@ -150,10 +153,11 @@ def main():
 
         # AI move finder
         if not gameOver and not playersTurn:
-            numPositions = 0
-            # numPositions += ai.testMoveGeneration(
-            # validMoves=validMoves, depth=1)
-            AIMove = ai.findRandomMove(validMoves)
+
+            AIMove = ai.findBestMove(gs, validMoves)
+            if AIMove == None:
+                AIMove = ai.findRandomMove(validMoves)
+                print("AI move was random")
             for i in range(len(validMoves)):
                 if AIMove == validMoves[i]:
                     gs.makeMove(validMoves[i])
@@ -185,7 +189,8 @@ def main():
         clock.tick(MAX_FPS)
         pg.display.flip()
 
-    # testBench(ai, 4)
+    if useTestBench:
+        testBench(ai, 3)
 
 
 """ 
@@ -256,7 +261,7 @@ def testBench(ai, depth):
         numPositions += ai.testMoveGeneration(depth=i)
         end = time.time()
         print(
-            f'At depth {i}, there are {numPositions} positions\n TIME: {end-start:.2f} seconds')
+            f'At depth {i}, there are {numPositions} positions\n TIME: {end-start:.2f} seconds\n')
 
 
 if __name__ == "__main__":
