@@ -1,11 +1,11 @@
-""" 
+"""
 This class holds all information about the current state of a chess game. It will be responsible for determining valid moves, as well as keeping a move log.
 """
 
 
 class GameState():
     def __init__(self, fen):
-        """ 
+        """
             8x8 2d array representing the board, each element is a 2 character string. The first character represents the color, second character represents the type of piece.
         """
         # self.fenString = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
@@ -20,6 +20,10 @@ class GameState():
         self.checks = []
         self.checkmate = False
         self.stalemate = False
+
+        # square where en passant is possible, right now it is empty
+        self.enpassantPossible = ()
+
         self.currentCastleRights = Castle(True, True, True, True)
         self.castleLog = [Castle(self.currentCastleRights.whiteKingSideCastle,
                                  self.currentCastleRights.whiteQueenSideCastle,
@@ -27,8 +31,9 @@ class GameState():
                                  self.currentCastleRights.blackQueenSideCastle
                                  )]
 
-    """ 
-    Takes a move as a parameter and executes it 
+
+    """
+    Takes a move as a parameter and executes it
 
     TODO:
     This does not work on castling, en passant
@@ -46,7 +51,17 @@ class GameState():
             else:
                 self.blackKingLocation = (move.endRow, move.endCol)
 
-        self.whiteToMove = not self.whiteToMove
+        if move.isEnpassantMove:
+            self.board[move.startRow][move.endCol] = 0
+            move.pieceCaptured = (
+                piece.white if not self.whiteToMove else piece.black) | piece.Pawn
+
+
+        if piece.getPieceType(move.pieceMoved) == piece.Pawn and abs(move.startRow - move.endRow) == 2:
+            self.enpassantPossible = (
+                (move.startRow + move.endRow) // 2, move.startCol)
+        else:
+            self.enpassantPossible = ()
 
         # castle move
         if move.isCastleMove:
@@ -76,8 +91,10 @@ class GameState():
                                          self.currentCastleRights.blackKingSideCastle,
                                          self.currentCastleRights.blackQueenSideCastle
                                          ))
+        self.whiteToMove = not self.whiteToMove                                       
 
     """ 
+
     Undo the last move made
     """
 
@@ -94,7 +111,18 @@ class GameState():
                 else:
                     self.blackKingLocation = (move.startRow, move.startCol)
 
+            # undo en passant
+            if move.isEnpassantMove:
+                self.board[move.endRow][move.endCol] = 0
+                self.board[move.startRow][move.endCol] = move.pieceCaptured
+                self.enpassantPossible = (move.endRow, move.endCol)
+
+            # undo 2 square pawn advance
+            if move.pieceMoved == piece.Pawn and abs(move.startRow - move.endRow) == 2:
+                self.enpassantPossible = ()
+
             self.whiteToMove = not self.whiteToMove
+
 
         # undo castle rights
 
@@ -115,10 +143,12 @@ class GameState():
                 self.board[move.endRow][move.endCol + 1] = 0
 
     """ 
+
     Responsible for all the logic that determines if a move is valid, including checks
     """
 
     def getLegalMoves(self):
+        tempEnpassantPossible = self.enpassantPossible
         piece = Piece()
         moves = []
 
@@ -186,9 +216,10 @@ class GameState():
             self.checkmate = False
             self.stalemate = False
 
+        self.enpassantPossible = tempEnpassantPossible
         return moves
 
-    """ 
+    """
         Helper function to check if king is in check
     """
 
@@ -211,8 +242,8 @@ class GameState():
                 return True
         return False
 
-    """ 
-    Responsible for all valid moves of a given piece 
+    """
+    Responsible for all valid moves of a given piece
     """
 
     def getPsuedoLegalMoves(self):
@@ -245,7 +276,7 @@ class GameState():
 
         return moves
 
-    """ 
+    """
     Checks moves for a check on the king or if a piece is pinned and cannot move
     """
 
@@ -291,7 +322,12 @@ class GameState():
 
                         # checks for piece and the direction that a given piece can move for capture
                         #! Does not account for knights
-                        if ((enemyPieceType == piece.Rook and 0 <= j <= 3) or (enemyPieceType == piece.Bishop and 4 <= j <= 7) or (enemyPieceType == piece.Queen) or (enemyPieceType == piece.King and i == 1) or (enemyPieceType == piece.Pawn and i == 1 and ((enemyColor == piece.white and 6 <= j <= 7) or (enemyColor == piece.black and 4 <= j <= 5)))):
+                        if ((enemyPieceType == piece.Rook and 0 <= j <= 3)
+                            or (enemyPieceType == piece.Bishop and 4 <= j <= 7)
+                            or (enemyPieceType == piece.Queen)
+                            or (enemyPieceType == piece.King and i == 1)
+                            or (enemyPieceType == piece.Pawn and i == 1 and ((enemyColor == piece.white and 6 <= j <= 7)
+                                                                             or (enemyColor == piece.black and 4 <= j <= 5)))):
                             # if pin is empty, then it is a check
                             if possiblePin == ():
                                 inCheck = True
@@ -323,6 +359,7 @@ class GameState():
 
         return inCheck, pins, checks
 
+
     """ 
         Updates the castle rights given a certain move on the board
     """
@@ -348,9 +385,10 @@ class GameState():
                     self.blackCastleKingside = False
 
     """ 
+
     Gets all pawn moves for the pawn located at row, col and returns a list of moves
-    
-    TODO: 
+
+    TODO:
     - En passant
     """
 
@@ -377,12 +415,21 @@ class GameState():
                 if piece.getPieceColor(self.board[r-1][c-1]) == piece.black:
                     if not isPinned or pinDirection == (-1, -1):
                         pawnMoves.append(Move((r, c), (r-1, c-1), self.board))
+                # checks for en passant
+                elif (r-1, c-1) == self.enpassantPossible:
+                    pawnMoves.append(
+                        Move((r, c), (r-1, c-1), self.board, isEnpassantPossible=True))
             # capture right
             if c + 1 <= 7:
                 # checks for black piece
                 if piece.getPieceColor(self.board[r-1][c+1]) == piece.black:
                     if not isPinned or pinDirection == (-1, 1):
                         pawnMoves.append(Move((r, c), (r-1, c+1), self.board))
+                # checks for en passant
+                elif (r-1, c+1) == self.enpassantPossible:
+                    pawnMoves.append(
+                        Move((r, c), (r-1, c+1), self.board, isEnpassantPossible=True))
+
         else:
             if self.board[r+1][c] == 0:
                 if not isPinned or pinDirection == (1, 0):
@@ -394,15 +441,23 @@ class GameState():
                 if piece.getPieceColor(self.board[r+1][c-1]) == piece.white:
                     if not isPinned or pinDirection == (1, -1):
                         pawnMoves.append(Move((r, c), (r+1, c-1), self.board))
+                # checks for en passant
+                elif (r+1, c-1) == self.enpassantPossible:
+                    pawnMoves.append(
+                        Move((r, c), (r+1, c-1), self.board, isEnpassantPossible=True))
             # capture right
             if c + 1 <= 7:
                 if piece.getPieceColor(self.board[r+1][c+1]) == piece.white:
                     if not isPinned or pinDirection == (1, 1):
                         pawnMoves.append(Move((r, c), (r+1, c+1), self.board))
+                # checks for en passant
+                elif (r+1, c+1) == self.enpassantPossible:
+                    pawnMoves.append(
+                        Move((r, c), (r+1, c+1), self.board, isEnpassantPossible=True))
 
         return pawnMoves
 
-    """ 
+    """
     Gets all knight moves for the knight located at row, col and returns a list of moves
     """
 
@@ -433,7 +488,7 @@ class GameState():
 
         return knightMoves
 
-    """ 
+    """
     Gets all rook moves for the rook located at row, col and returns a list of moves
 
     TODO:
@@ -477,7 +532,7 @@ class GameState():
 
         return rookMoves
 
-    """ 
+    """
     Gets all bishop moves for the bishop located at row, col and returns a list of moves
     """
 
@@ -518,7 +573,7 @@ class GameState():
 
         return bishopMoves
 
-    """ 
+    """
     Gets all queen moves for the queen located at row, col and returns a list of moves
     """
 
@@ -616,6 +671,7 @@ class GameState():
         return piece.getPieceColor(chessPiece)
 
 
+
 """ 
     Determines the validity of a castle move, acts as a storage class for the castle rights
 """
@@ -630,6 +686,7 @@ class Castle():
 
 
 """ 
+
 Responsible for storing all information about the current move. It will also be responsible for determining if a move is valid.
 """
 
@@ -644,7 +701,9 @@ class Move():
                    "e": 4, "f": 5, "g": 6, "h": 7}
     colsToFiles = {v: k for k, v in filesToCols.items()}
 
-    def __init__(self, startSq, endSq, board, isCastleMove=False):
+
+    def __init__(self, startSq, endSq, board, isEnpassantPossible=False, isCastleMove=False):
+
         self.startRow = startSq[0]
         self.startCol = startSq[1]
         self.endRow = endSq[0]
@@ -658,6 +717,13 @@ class Move():
         self.pawnPromotion = (piece.getPieceType(self.pieceMoved) == piece.Pawn and (
             self.endRow == 0 or self.endRow == 7))
         self.promotionChoice = piece.Queen
+        self.isEnpassantMove = isEnpassantPossible
+        if self.isEnpassantMove:
+            self.pieceCaptured = piece.Pawn
+            if self.pieceMoved == (piece.white | piece.Pawn):
+                self.pieceCaptured = piece.black
+            else:
+                self.pieceCaptured = piece.white
 
         self.isCastleMove = isCastleMove
 
@@ -675,7 +741,7 @@ class Move():
 
 
 """
-    Responsible for logic having to do with each piece, holds a binary 
+    Responsible for logic having to do with each piece, holds a binary
     representation of the piece.
 """
 
@@ -731,7 +797,7 @@ class Piece():
         }
 
 
-""" 
+"""
     This is responsible for handling fen strings and utility
 """
 
